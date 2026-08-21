@@ -444,34 +444,33 @@ function startRevealTimer() {
 }
 
 function doReveal1() {
-    // Làm mờ ô nhiễu xung quanh từ chưa đặt (lần lượt 0.8s/ô)
-    var delay = 0;
-    state.words.forEach(function (word, wi) {
-        if (state.placed.indexOf(wi) >= 0 || !word._placed) return;
-        var rs = word._placed.map(function (rc) { return rc[0]; });
-        var cs = word._placed.map(function (rc) { return rc[1]; });
-        var minR = Math.max(0, Math.min.apply(null, rs) - 1);
-        var maxR = Math.min(GRID_SIZE - 1, Math.max.apply(null, rs) + 1);
-        var minC = Math.max(0, Math.min.apply(null, cs) - 1);
-        var maxC = Math.min(GRID_SIZE - 1, Math.max.apply(null, cs) + 1);
-        var wset = {};
-        word._placed.forEach(function (rc) { wset[rc[0] + ',' + rc[1]] = 1; });
-        for (var r = minR; r <= maxR; r++) {
-            for (var c = minC; c <= maxC; c++) {
-                if (!wset[r + ',' + c] && !state.grid[r][c].correct) {
-                    (function (rr, cc, d) {
-                        setTimeout(function () {
-                            if (state.placed.indexOf(wi) >= 0) return;
-                            var el = $cell(rr, cc); if (el) el.classList.add('hint-dim');
-                        }, d);
-                    })(r, c, delay);
-                    delay += 600;
-                }
+    // Làm mờ ngẫu nhiên TẤT CẢ ô nhiễu toàn lưới (wordIdx === -1), 600ms/ô
+    // Không mờ ô keyword (wordIdx >= 0) và ô đã đặt đúng
+    var noiseCells = [];
+    for (var r = 0; r < GRID_SIZE; r++) {
+        for (var c = 0; c < GRID_SIZE; c++) {
+            var cell = state.grid[r][c];
+            if (cell.wordIdx === -1 && !cell.correct) {
+                noiseCells.push([r, c]);
             }
         }
+    }
+    // Xáo trộn ngẫu nhiên thứ tự
+    for (var i = noiseCells.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = noiseCells[i]; noiseCells[i] = noiseCells[j]; noiseCells[j] = tmp;
+    }
+    // Mờ dần từng ô 600ms/ô
+    noiseCells.forEach(function (rc, i) {
+        setTimeout(function () {
+            var el = $cell(rc[0], rc[1]);
+            if (el && !el.classList.contains('correct-cell') && !el.classList.contains('hint-border')) {
+                el.classList.add('hint-dim');
+            }
+        }, i * 600);
     });
     var eH = document.getElementById('extra-hint');
-    eH.textContent = '💡 Vùng chứa từ đang được làm rõ dần...';
+    eH.textContent = '💡 Các ô nhiễu đang mờ dần, từ ẩn sẽ hiện rõ hơn...';
     eH.style.display = 'block';
     eH.classList.remove('hint-flash'); void eH.offsetWidth; eH.classList.add('hint-flash');
 }
