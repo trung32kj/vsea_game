@@ -1,19 +1,19 @@
 <?php
-// ── CẤU HÌNH DATABASE MYSQL ───────────────────────────────────────
-// Hostinger: vào hPanel → Databases → MySQL → lấy thông tin bên dưới
-define('DB_HOST', 'localhost');          // Hostinger thường là 'localhost'
-define('DB_USER', 'u123456_vsea');      // ← ĐỔI thành DB username của bạn
-define('DB_PASS', 'YOUR_DB_PASSWORD');  // ← ĐỔI thành DB password của bạn
-define('DB_NAME', 'u123456_vsea_game'); // ← ĐỔI thành DB name của bạn
+// ── CẤU HÌNH DATABASE MYSQL (Laragon) ────────────────────────────
+define('DB_HOST', 'localhost');
+define('DB_USER', 'root');
+define('DB_PASS', '');          // Laragon mặc định không có mật khẩu
+define('DB_NAME', 'vsea_game');
 define('DB_PORT', 3306);
 
-// ── CORS: cho phép domain của bạn gọi API ────────────────────────
+// ── CORS: cho phép GitHub Pages gọi API ──────────────────────────
+// Thay bằng tên miền thật của bạn khi deploy
 $allowed_origins = [
-    'https://alprotrle.xyz',
-    'https://www.alprotrle.xyz',
     'https://trung32kj.github.io',
+    'https://alprotrle.xyz',
     'http://localhost',
     'http://127.0.0.1',
+    'null'   // file:// khi test local
 ];
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
