@@ -551,13 +551,27 @@ function nextRound(ok) {
     clearInterval(state.timer); clearInterval(state.hintTimer); clearInterval(state.revTimer);
     cancelDimTimeouts();
     var next = state.currentRound + 1;
-    if (next >= ROUNDS.length) { endGame(); return; }
-    var ov = document.createElement('div'); ov.className = 'round-transition';
-    ov.innerHTML = '<div class="round-transition-card"><h3>' + (ok ? '✅' : '⏰') + ' Vòng ' + (state.currentRound + 1) + ' ' + (ok ? 'hoàn thành!' : '– Hết giờ!') + '</h3>' +
-        '<p>Chuẩn bị vòng tiếp theo</p><div class="next-word">Vòng ' + (next + 1) + ' / ' + ROUNDS.length + '</div>' +
-        '<p style="color:#5f6368;font-size:13px;margin-top:6px">' + ROUNDS[next].clue + '</p></div>';
+    var answer = ROUNDS[state.currentRound].display;
+    var isLast = next >= ROUNDS.length;
+
+    var ov = document.createElement('div');
+    ov.className = 'round-transition';
+    ov.innerHTML = '<div class="round-transition-card">'
+        + '<h3>' + (ok ? '✅' : '⏰') + ' Vòng ' + (state.currentRound + 1)
+        + ' ' + (ok ? 'hoàn thành!' : '– Hết giờ!') + '</h3>'
+        + '<div class="transition-answer">🔑 Đáp án: <strong>' + answer + '</strong></div>'
+        + (!isLast
+            ? '<p style="color:#5f6368;font-size:13px;margin-top:8px">Chuẩn bị vòng '
+            + (next + 1) + ' / ' + ROUNDS.length + '</p>'
+            + '<p style="color:#5f6368;font-size:12px;margin-top:4px">' + ROUNDS[next].clue + '</p>'
+            : '<p style="color:#5f6368;font-size:13px;margin-top:8px">Sắp kết thúc...</p>')
+        + '</div>';
     document.body.appendChild(ov);
-    setTimeout(function () { ov.remove(); startRound(next); }, 2200);
+
+    setTimeout(function () {
+        ov.remove();
+        if (isLast) endGame(); else startRound(next);
+    }, 2800);
 }
 
 /* ── END GAME ── */
