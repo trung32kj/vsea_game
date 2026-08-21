@@ -428,6 +428,8 @@ body {
 }
 
 .round-display-word {
+  display: none;
+  /* ẩn đáp án, chỉ hiện khi hoàn thành vòng */
   color: var(--gold);
   font-size: 16px;
   font-weight: 900;

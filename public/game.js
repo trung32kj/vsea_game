@@ -205,7 +205,7 @@ function startRound(idx) {
     document.getElementById('score-display').textContent = state.score;
     document.getElementById('round-clue').textContent = round.clue;
     var rdEl = document.getElementById('round-display');
-    if (rdEl) rdEl.textContent = round.display;
+    if (rdEl) { rdEl.style.display = 'none'; rdEl.textContent = ROUNDS[idx].display; }
     document.getElementById('found-indicator').style.display = 'none';
     var eH = document.getElementById('extra-hint');
     if (eH) { eH.style.display = 'none'; eH.textContent = ''; }
@@ -419,6 +419,9 @@ function tryPlace(wi, ar, ac) {
 
         if (state.placed.length === state.words.length) {
             state.roundsCompleted++;
+            // Hiện đáp án khi hoàn thành
+            var rdEl = document.getElementById('round-display');
+            if (rdEl) rdEl.style.display = 'block';
             document.getElementById('found-indicator').style.display = 'block';
             document.getElementById('found-word').textContent = ROUNDS[state.currentRound].display;
             clearInterval(state.timer); clearInterval(state.hintTimer); clearInterval(state.revTimer);
