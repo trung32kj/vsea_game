@@ -132,8 +132,12 @@ var state = {
 /* ── UTILS ── */
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
-    document.getElementById(id).classList.add('active');
-    window.scrollTo(0, 0);
+    var target = document.getElementById(id);
+    if (target) target.classList.add('active');
+    // Scroll lên đầu — dùng cả 2 cách để đảm bảo hoạt động trên mobile
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
 }
 function showLoading(v) { document.getElementById('loading-overlay').style.display = v ? 'flex' : 'none'; }
 function $cell(r, c) { return document.querySelector('.grid-cell[data-r="' + r + '"][data-c="' + c + '"]'); }
@@ -170,12 +174,12 @@ async function handleRegister(e) {
     } catch (err) {
         showLoading(false);
         errEl.textContent = err.message; errEl.style.display = 'block';
-        document.getElementById('btn-register').disabled = false;
+        var _tmp = document.getElementById('btn-register'); if (_tmp) _tmp.disabled = false;
     }
 }
 
 function showWaiting() {
-    document.getElementById('waiting-name').textContent = state.playerName;
+    var _tmp = document.getElementById('waiting-name'); if (_tmp) _tmp.textContent = state.playerName;
     showScreen('screen-waiting');
     state.waitPoll = setInterval(async function () {
         if (await checkGameActive()) {
@@ -200,13 +204,13 @@ function startRound(idx) {
     state.grid = buildGrid(state.words);
     state.pieceRots = state.words.map(function () { return Math.floor(Math.random() * 4); });
 
-    document.getElementById('round-current').textContent = idx + 1;
-    document.getElementById('round-total').textContent = ROUNDS.length;
-    document.getElementById('score-display').textContent = state.score;
-    document.getElementById('round-clue').textContent = round.clue;
+    var _tmp = document.getElementById('round-current'); if (_tmp) _tmp.textContent = idx + 1;
+    var _tmp2 = document.getElementById('round-total'); if (_tmp2) _tmp2.textContent = ROUNDS.length;
+    var _tmp3 = document.getElementById('score-display'); if (_tmp3) _tmp3.textContent = state.score;
+    var _tmp4 = document.getElementById('round-clue'); if (_tmp4) _tmp4.textContent = round.clue;
     var rdEl = document.getElementById('round-display');
     if (rdEl) { rdEl.style.display = 'none'; rdEl.textContent = ROUNDS[idx].display; }
-    document.getElementById('found-indicator').style.display = 'none';
+    var _fi = document.getElementById('found-indicator'); if (_fi) _fi.style.display = 'none';
     var eH = document.getElementById('extra-hint');
     if (eH) { eH.style.display = 'none'; eH.textContent = ''; }
 
@@ -393,7 +397,8 @@ function clearPrev() {
 function tryPlace(wi, ar, ac) {
     if (state.placed.indexOf(wi) >= 0) return;
     var word = state.words[wi];
-    var cells = getShapeCells(word.shape, word.letters.length, state.pieceRots[wi]);
+    var rot = state.pieceRots[wi];
+    var cells = getShapeCells(word.shape, word.letters.length, rot);
 
     var inBounds = cells.every(function (rc) {
         var r = ar + rc[0], c = ac + rc[1];
@@ -401,9 +406,26 @@ function tryPlace(wi, ar, ac) {
     });
     if (!inBounds) { flashRed(cells, ar, ac); return; }
 
-    var got = cells.map(function (rc) { return state.grid[ar + rc[0]][ac + rc[1]].char; });
-    var exp = word.letters.slice();
-    var correct = got.slice().sort().join('') === exp.slice().sort().join('');
+    // So khớp theo đúng vị trí: ô thứ i trong shape phải chứa chữ thứ i của word
+    // Vì hình đã xáo trộn chữ hiển thị nhưng word._placed lưu đúng thứ tự,
+    // ta cần tìm rotation nào của word._placed khớp với anchor hiện tại
+    var correct = false;
+
+    // Thử tất cả 4 rotation của từ gốc để xem có rotation nào khớp không
+    for (var testRot = 0; testRot < 4; testRot++) {
+        var testCells = getShapeCells(word.shape, word.letters.length, testRot);
+        var match = testCells.every(function (rc, li) {
+            var r = ar + rc[0], c = ac + rc[1];
+            if (r < 0 || r >= GRID_SIZE || c < 0 || c >= GRID_SIZE) return false;
+            return state.grid[r][c].char === word.letters[li];
+        });
+        if (match) {
+            correct = true;
+            // Dùng testCells để mark correct
+            cells = testCells;
+            break;
+        }
+    }
 
     if (correct) {
         cells.forEach(function (rc) {
@@ -414,16 +436,15 @@ function tryPlace(wi, ar, ac) {
         });
         state.placed.push(wi);
         state.score += 50 + Math.max(0, Math.floor(state.timeLeft / 5));
-        document.getElementById('score-display').textContent = state.score;
+        var _tmp = document.getElementById('score-display'); if (_tmp) _tmp.textContent = state.score;
         renderPieces();
 
         if (state.placed.length === state.words.length) {
             state.roundsCompleted++;
-            // Hiện đáp án khi hoàn thành
             var rdEl = document.getElementById('round-display');
             if (rdEl) rdEl.style.display = 'block';
             document.getElementById('found-indicator').style.display = 'block';
-            document.getElementById('found-word').textContent = ROUNDS[state.currentRound].display;
+            var _tmp = document.getElementById('found-word'); if (_tmp) _tmp.textContent = ROUNDS[state.currentRound].display;
             clearInterval(state.timer); clearInterval(state.hintTimer); clearInterval(state.revTimer);
             setTimeout(function () { nextRound(true); }, 1800);
         }
@@ -542,8 +563,8 @@ function startTimer(s) {
 }
 function updateTimerUI() {
     var r = ROUNDS[state.currentRound];
-    document.getElementById('timer-display').textContent = state.timeLeft;
-    document.getElementById('timer-fill').style.width = (state.timeLeft / r.timeLimit * 100) + '%';
+    var _td = document.getElementById('timer-display'); if (_td) _td.textContent = state.timeLeft;
+    var _tf = document.getElementById('timer-fill'); if (_tf) _tf.style.width = (state.timeLeft / r.timeLimit * 100) + '%';
 }
 
 /* ── NEXT ROUND ── */
@@ -588,8 +609,8 @@ async function endGame() {
         var d = await res.json(); state.giftName = d.giftName; state.wonGift = d.wonGift;
     } catch (e) { state.giftName = 'Chúc mừng bạn đã tham gia!'; state.wonGift = false; }
     showLoading(false);
-    document.getElementById('spin-score').textContent = state.score;
-    document.getElementById('spin-rounds').textContent = state.roundsCompleted;
+    var _ss = document.getElementById('spin-score'); if (_ss) _ss.textContent = state.score;
+    var _sr = document.getElementById('spin-rounds'); if (_sr) _sr.textContent = state.roundsCompleted;
     await loadGiftsAndDrawWheel();
     showScreen('screen-spin');
 }
@@ -646,20 +667,22 @@ function spinWheel() {
     })(performance.now());
 }
 function showSpinResult() {
-    document.getElementById('spin-gift-icon').textContent = state.wonGift ? '🎁' : '🌟';
-    document.getElementById('spin-gift-name').textContent = state.giftName;
-    document.getElementById('spin-result').style.display = 'block';
+    var _gi = document.getElementById('spin-gift-icon'); if (_gi) _gi.textContent = state.wonGift ? '🎁' : '🌟';
+    var _gn = document.getElementById('spin-gift-name'); if (_gn) _gn.textContent = state.giftName;
+    var _sr = document.getElementById('spin-result'); if (_sr) _sr.style.display = 'block';
     setTimeout(goToFinish, 2500);
 }
 function goToFinish() {
-    document.getElementById('finish-name').textContent = 'Xin chào, ' + state.playerName + '!';
-    document.getElementById('finish-score').textContent = state.score;
-    document.getElementById('finish-rounds').textContent = state.roundsCompleted + '/' + ROUNDS.length;
-    document.getElementById('finish-gift-name').textContent = state.giftName;
+    var _fn = document.getElementById('finish-name'); if (_fn) _fn.textContent = 'Xin chào, ' + state.playerName + '!';
+    var _fs = document.getElementById('finish-score'); if (_fs) _fs.textContent = state.score;
+    var _fr = document.getElementById('finish-rounds'); if (_fr) _fr.textContent = state.roundsCompleted + '/' + ROUNDS.length;
+    var _fg = document.getElementById('finish-gift-name'); if (_fg) _fg.textContent = state.giftName;
     launchConfetti(); showScreen('screen-finish');
 }
 function launchConfetti() {
-    var a = document.getElementById('confetti-area'); a.innerHTML = '';
+    var a = document.getElementById('confetti-area');
+    if (!a) return;
+    a.innerHTML = '';
     var colors = ['#1a73e8', '#f5a623', '#34a853', '#ea4335', '#9c27b0', '#fff'];
     for (var i = 0; i < 60; i++) {
         var p = document.createElement('div'); p.className = 'confetti-piece';
