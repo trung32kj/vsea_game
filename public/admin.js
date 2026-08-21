@@ -5,7 +5,7 @@
 // ── CONFIG ────────────────────────────────────────────────────────
 const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? ''
-    : 'https://api.alprotrle.xyz';
+    : 'https://alprotrle.xyz';
 
 const FETCH_OPTS = { credentials: 'include' };
 const JSON_HEADERS = { 'Content-Type': 'application/json' };

@@ -6,8 +6,8 @@
  */
 
 define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_USER', 'nkkoadrf_vsea_game');
+define('DB_PASS', 'vsea_game');
 define('DB_PORT', 3306);
 
 header("Content-Type: text/html; charset=UTF-8");
@@ -18,8 +18,8 @@ if ($db->connect_error) {
 }
 
 $sqls = [
-    "CREATE DATABASE IF NOT EXISTS vsea_game CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
-    "USE vsea_game",
+    "CREATE DATABASE IF NOT EXISTS nkkoadrf_vsea_game CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+    "USE nkkoadrf_vsea_game",
 
     "CREATE TABLE IF NOT EXISTS admins (
         id INT AUTO_INCREMENT PRIMARY KEY,

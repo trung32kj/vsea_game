@@ -111,12 +111,10 @@ function showLoading(v) {
     document.getElementById('loading-overlay').style.display = v ? 'flex' : 'none';
 }
 
-// ── CONFIG: URL gốc của PHP backend (Laragon) ────────────────────
-// Thay bằng IP/domain thật của máy chạy Laragon khi dùng thật
-// VD: const API = 'https://api.alprotrle.xyz';
+// ── CONFIG: URL gốc của PHP backend (AZDIGI) ─────────────────────
 const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? ''                                    // cùng máy → dùng relative URL
-    : 'https://api.alprotrle.xyz';          // production → subdomain API
+    ? ''
+    : 'https://alprotrle.xyz';
 
 // ── GAME STATUS CHECK ─────────────────────────────────────────────
 async function checkGameActive() {

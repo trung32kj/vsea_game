@@ -1,19 +1,19 @@
 <?php
-// ── CẤU HÌNH DATABASE MYSQL (Laragon) ────────────────────────────
+// ── CẤU HÌNH DATABASE MYSQL (AZDIGI) ─────────────────────────────
 define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');          // Laragon mặc định không có mật khẩu
-define('DB_NAME', 'vsea_game');
+define('DB_USER', 'nkkoadrf_vsea_game');
+define('DB_PASS', 'vsea_game');
+define('DB_NAME', 'nkkoadrf_vsea_game');
 define('DB_PORT', 3306);
 
 // ── CORS: cho phép GitHub Pages gọi API ──────────────────────────
-// Thay bằng tên miền thật của bạn khi deploy
 $allowed_origins = [
     'https://trung32kj.github.io',
     'https://alprotrle.xyz',
+    'https://www.alprotrle.xyz',
     'http://localhost',
     'http://127.0.0.1',
-    'null'   // file:// khi test local
+    'null'
 ];
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
