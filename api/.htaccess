@@ -1,0 +1,16 @@
+# Cho phép truy cập API từ các domain khác
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+
+# Chặn truy cập trực tiếp vào config.php
+<Files "config.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Chặn truy cập install.php sau khi cài xong (bỏ comment dòng dưới)
+# <Files "install.php">
+#     Order Allow,Deny
+#     Deny from all
+# </Files>

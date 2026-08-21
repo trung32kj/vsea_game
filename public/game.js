@@ -111,10 +111,17 @@ function showLoading(v) {
     document.getElementById('loading-overlay').style.display = v ? 'flex' : 'none';
 }
 
+// ── CONFIG: URL gốc của PHP backend (Laragon) ────────────────────
+// Thay bằng IP/domain thật của máy chạy Laragon khi dùng thật
+// VD: const API = 'https://api.alprotrle.xyz';
+const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? ''                                    // cùng máy → dùng relative URL
+    : 'https://api.alprotrle.xyz';          // production → subdomain API
+
 // ── GAME STATUS CHECK ─────────────────────────────────────────────
 async function checkGameActive() {
     try {
-        const res = await fetch('/api/game/status');
+        const res = await fetch(`${API}/api/game.php?action=status`);
         const data = await res.json();
         return data.active;
     } catch { return false; }
@@ -134,9 +141,10 @@ async function handleRegister(e) {
     showLoading(true);
 
     try {
-        const res = await fetch('/api/player/register', {
+        const res = await fetch(`${API}/api/game.php?action=register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ fullName, email, phone, className })
         });
         const data = await res.json();
@@ -528,9 +536,10 @@ async function endGame() {
     const timeUsed = Math.floor((Date.now() - state.startTime) / 1000);
     showLoading(true);
     try {
-        const res = await fetch('/api/game/result', {
+        const res = await fetch(`${API}/api/game.php?action=result`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
                 playerId: state.playerId, score: state.score,
                 timeUsed, roundsCompleted: state.roundsCompleted
@@ -558,7 +567,7 @@ const WHEEL_COLORS = [
 
 async function loadGiftsAndDrawWheel() {
     try {
-        const res = await fetch('/api/gifts/public');
+        const res = await fetch(`${API}/api/game.php?action=gifts_public`, { credentials: 'include' });
         const data = await res.json();
         state.gifts = data.gifts && data.gifts.length > 0
             ? data.gifts : [{ name: 'Chúc mừng!', probability: 100 }];

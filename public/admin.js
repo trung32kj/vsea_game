@@ -2,6 +2,14 @@
    VSEATeam Admin Panel – JavaScript
 ══════════════════════════════════════════════════════════════ */
 
+// ── CONFIG ────────────────────────────────────────────────────────
+const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? ''
+    : 'https://api.alprotrle.xyz';
+
+const FETCH_OPTS = { credentials: 'include' };
+const JSON_HEADERS = { 'Content-Type': 'application/json' };
+
 let allPlayers = [];
 let allGifts = [];
 let editingGiftId = null;
@@ -9,7 +17,7 @@ let confirmCallback = null;
 
 // ── INIT ──────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
-    const res = await fetch('/api/admin/check');
+    const res = await fetch(`${API}/api/admin.php?action=check`, FETCH_OPTS);
     const data = await res.json();
     if (data.isAdmin) showAdminApp();
 
@@ -27,9 +35,10 @@ async function handleLogin(e) {
     const errEl = document.getElementById('login-error');
     errEl.style.display = 'none';
     try {
-        const res = await fetch('/api/admin/login', {
+        const res = await fetch(`${API}/api/admin.php?action=login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: JSON_HEADERS,
+            credentials: 'include',
             body: JSON.stringify({ username, password })
         });
         const data = await res.json();
@@ -47,7 +56,7 @@ async function handleLogin(e) {
 }
 
 async function handleLogout() {
-    await fetch('/api/admin/logout', { method: 'POST' });
+    await fetch(`${API}/api/admin.php?action=logout`, { method: 'POST', ...FETCH_OPTS });
     location.reload();
 }
 
@@ -93,7 +102,7 @@ async function startGameSession() {
     const btn = document.getElementById('btn-start-game');
     btn.disabled = true; btn.textContent = '⏳ Đang mở...';
     try {
-        const res = await fetch('/api/admin/game/start', { method: 'POST' });
+        const res = await fetch(`${API}/api/admin.php?action=start_game`, { method: 'POST', ...FETCH_OPTS });
         const data = await res.json();
         if (data.success) { updateGameStatusUI(true); loadGifts(); loadDashboard(); }
     } catch (err) { console.error(err); }
@@ -104,7 +113,7 @@ async function stopGameSession() {
     const btn = document.getElementById('btn-stop-game');
     btn.disabled = true;
     try {
-        const res = await fetch('/api/admin/game/stop', { method: 'POST' });
+        const res = await fetch(`${API}/api/admin.php?action=stop_game`, { method: 'POST', ...FETCH_OPTS });
         const data = await res.json();
         if (data.success) updateGameStatusUI(false);
     } catch (err) { console.error(err); }
@@ -114,7 +123,7 @@ async function stopGameSession() {
 // ── DASHBOARD ─────────────────────────────────────────────────────
 async function loadDashboard() {
     try {
-        const res = await fetch('/api/admin/stats');
+        const res = await fetch(`${API}/api/admin.php?action=stats`, FETCH_OPTS);
         const data = await res.json();
         if (!data.success) return;
 
@@ -151,7 +160,7 @@ async function loadDashboard() {
 // ── PLAYERS ───────────────────────────────────────────────────────
 async function loadPlayers() {
     try {
-        const res = await fetch('/api/admin/players');
+        const res = await fetch(`${API}/api/admin.php?action=players`, FETCH_OPTS);
         const data = await res.json();
         if (!data.success) return;
         allPlayers = data.players;
@@ -200,7 +209,7 @@ function confirmDeletePlayer(id, name) {
     showConfirm('Xóa người chơi',
         `Bạn có chắc muốn xóa "${name}"? Hành động này không thể hoàn tác.`,
         async () => {
-            await fetch(`/api/admin/players/${id}`, { method: 'DELETE' });
+            await fetch(`${API}/api/admin.php?action=delete_player&id=${id}`, { method: 'DELETE', ...FETCH_OPTS });
             loadPlayers(); loadDashboard();
         });
 }
@@ -226,7 +235,7 @@ function exportCSV() {
 // ── GIFTS ─────────────────────────────────────────────────────────
 async function loadGifts() {
     try {
-        const res = await fetch('/api/admin/gifts');
+        const res = await fetch(`${API}/api/admin.php?action=gifts`, FETCH_OPTS);
         const data = await res.json();
         if (!data.success) return;
         allGifts = data.gifts;
@@ -311,11 +320,13 @@ async function saveGift(e) {
     }
     const method = editingGiftId ? 'PUT' : 'POST';
     const url = editingGiftId
-        ? `/api/admin/gifts/${editingGiftId}` : '/api/admin/gifts';
+        ? `${API}/api/admin.php?action=update_gift&id=${editingGiftId}`
+        : `${API}/api/admin.php?action=add_gift`;
     try {
         const res = await fetch(url, {
             method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: JSON_HEADERS,
+            credentials: 'include',
             body: JSON.stringify({ name, quantity, probability })
         });
         const data = await res.json();
@@ -330,7 +341,7 @@ async function saveGift(e) {
 function confirmDeleteGift(id, name) {
     showConfirm('Xóa quà tặng', `Bạn có chắc muốn xóa quà "${name}"?`,
         async () => {
-            await fetch(`/api/admin/gifts/${id}`, { method: 'DELETE' });
+            await fetch(`${API}/api/admin.php?action=delete_gift&id=${id}`, { method: 'DELETE', ...FETCH_OPTS });
             loadGifts(); loadDashboard();
         });
 }
@@ -339,7 +350,7 @@ async function resetGifts() {
     showConfirm('Reset số lượng quà',
         'Khôi phục toàn bộ số lượng quà về giá trị ban đầu?',
         async () => {
-            await fetch('/api/admin/gifts/reset', { method: 'POST' });
+            await fetch(`${API}/api/admin.php?action=reset_gifts`, { method: 'POST', ...FETCH_OPTS });
             loadGifts(); loadDashboard();
         });
 }
