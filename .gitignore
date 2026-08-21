@@ -1,6 +1,19 @@
+# Node (không dùng nữa, giữ phòng trường hợp)
 node_modules/
-data/game.db
-data/game.db-shm
-data/game.db-wal
-.env
+npm-debug.log*
+
+# PHP / Laragon local only
+api/install.php
+
+# Data files
+data/
+*.zip
 *.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp
