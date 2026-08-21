@@ -4,6 +4,7 @@
 
 // ── CONFIG ────────────────────────────────────────────────────────
 const API = '';
+const _VER = 'v2.0-fix-delete'; // kiểm tra version trên server
 
 const FETCH_OPTS = { credentials: 'include' };
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
@@ -264,7 +265,7 @@ function renderGifts(gifts) {
           <button class="btn-icon" title="Sửa"
             onclick="openGiftModal(${g.id})">✏️</button>
           <button class="btn-icon del" title="Xóa"
-            onclick="confirmDeleteGift(${g.id}, '${escHtml(g.name)}')">🗑️</button>
+            {"success":true,"affected_rows":1,"error":"","id_tested":5,"method":"GET"}
         </td>
       </tr>`;
     }).join('');
