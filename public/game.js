@@ -203,9 +203,11 @@ function startRound(idx) {
     document.getElementById('round-total').textContent = ROUNDS.length;
     document.getElementById('score-display').textContent = state.score;
     document.getElementById('round-clue').textContent = round.clue;
-    document.getElementById('round-display').textContent = round.display;
+    var rdEl = document.getElementById('round-display');
+    if (rdEl) rdEl.textContent = round.display;
     document.getElementById('found-indicator').style.display = 'none';
-    var eH = document.getElementById('extra-hint'); eH.style.display = 'none'; eH.textContent = '';
+    var eH = document.getElementById('extra-hint');
+    if (eH) { eH.style.display = 'none'; eH.textContent = ''; }
 
     renderGrid();
     renderPieces();
