@@ -1,0 +1,4 @@
+# Redirect tất cả request về public/ (root của web)
+# File này đặt ở root repo, Hostinger sẽ dùng nó nếu deploy cả repo
+
+# Nếu Hostinger trỏ thẳng vào public/ thì file này không cần thiết
