@@ -189,6 +189,7 @@ function showWaiting() {
 function startRound(idx) {
     if (idx >= ROUNDS.length) { endGame(); return; }
     clearInterval(state.timer); clearInterval(state.hintTimer); clearInterval(state.revTimer);
+    cancelDimTimeouts();
     state.currentRound = idx; state.hintIndex = 0; state.placed = []; state.revStep = 0;
 
     var round = ROUNDS[idx];
@@ -435,63 +436,79 @@ function flashRed(cells, ar, ac) {
     });
 }
 
-/* ── REVEAL TIMER (gợi ý sau 30s và 60s) ── */
+/* ── REVEAL TIMER (gợi ý) ── */
 function startRevealTimer() {
     clearInterval(state.revTimer);
+    // Hủy toàn bộ setTimeout dim đang pending
+    cancelDimTimeouts();
     state.revStep = 0;
     state.revTimer = setInterval(function () {
         if (state.revStep < 1 && state.timeLeft <= 60) { state.revStep = 1; doReveal1(); }
-        if (state.revStep < 2 && state.timeLeft <= 30) { state.revStep = 2; doReveal2(); }
+        if (state.revStep < 2 && state.timeLeft <= 10) { state.revStep = 2; doReveal2(); }
     }, 1000);
 }
 
+// Lưu danh sách setTimeout để có thể cancel
+var _dimTimeouts = [];
+function cancelDimTimeouts() {
+    _dimTimeouts.forEach(function (id) { clearTimeout(id); });
+    _dimTimeouts = [];
+}
+
 function doReveal1() {
-    // Làm mờ ngẫu nhiên TẤT CẢ ô nhiễu toàn lưới (wordIdx === -1), 600ms/ô
-    // Không mờ ô keyword (wordIdx >= 0) và ô đã đặt đúng
+    // Làm mờ ngẫu nhiên ô NHIỄU toàn lưới (wordIdx === -1), KHÔNG mờ ô keyword
     var noiseCells = [];
     for (var r = 0; r < GRID_SIZE; r++) {
         for (var c = 0; c < GRID_SIZE; c++) {
             var cell = state.grid[r][c];
+            // Chỉ mờ ô nhiễu thuần (không phải keyword, không phải đã đúng)
             if (cell.wordIdx === -1 && !cell.correct) {
                 noiseCells.push([r, c]);
             }
         }
     }
-    // Xáo trộn ngẫu nhiên thứ tự
+    // Xáo trộn ngẫu nhiên
     for (var i = noiseCells.length - 1; i > 0; i--) {
         var j = Math.floor(Math.random() * (i + 1));
         var tmp = noiseCells[i]; noiseCells[i] = noiseCells[j]; noiseCells[j] = tmp;
     }
-    // Mờ dần từng ô 600ms/ô
+    // Mờ dần 600ms/ô — lưu timeout để cancel khi sang màn mới
     noiseCells.forEach(function (rc, i) {
-        setTimeout(function () {
+        var tid = setTimeout(function () {
             var el = $cell(rc[0], rc[1]);
             if (el && !el.classList.contains('correct-cell') && !el.classList.contains('hint-border')) {
                 el.classList.add('hint-dim');
             }
         }, i * 600);
+        _dimTimeouts.push(tid);
     });
     var eH = document.getElementById('extra-hint');
-    eH.textContent = '💡 Các ô nhiễu đang mờ dần, từ ẩn sẽ hiện rõ hơn...';
-    eH.style.display = 'block';
-    eH.classList.remove('hint-flash'); void eH.offsetWidth; eH.classList.add('hint-flash');
+    if (eH) {
+        eH.textContent = '💡 Các ô nhiễu đang mờ dần...';
+        eH.style.display = 'block';
+        eH.classList.remove('hint-flash'); void eH.offsetWidth; eH.classList.add('hint-flash');
+    }
 }
 
 function doReveal2() {
-    // Viền vàng nhấp nháy quanh ô của từ chưa đặt
+    // 10s cuối: viền vàng nhấp nháy quanh ô của từ chưa đặt, 500ms/ô
     state.words.forEach(function (word, wi) {
         if (state.placed.indexOf(wi) >= 0 || !word._placed) return;
         word._placed.forEach(function (rc, i) {
-            setTimeout(function () {
+            var tid = setTimeout(function () {
                 if (state.placed.indexOf(wi) >= 0) return;
-                var el = $cell(rc[0], rc[1]); if (el) el.classList.add('hint-border');
-            }, i * 250);
+                var el = $cell(rc[0], rc[1]);
+                if (el) el.classList.add('hint-border');
+            }, i * 500);
+            _dimTimeouts.push(tid);
         });
     });
     var eH = document.getElementById('extra-hint');
-    eH.textContent = '💡 Ô viền vàng = vị trí của từ cần tìm!';
-    eH.style.display = 'block';
-    eH.classList.remove('hint-flash'); void eH.offsetWidth; eH.classList.add('hint-flash');
+    if (eH) {
+        eH.textContent = '💡 Ô viền vàng = vị trí của từ cần tìm!';
+        eH.style.display = 'block';
+        eH.classList.remove('hint-flash'); void eH.offsetWidth; eH.classList.add('hint-flash');
+    }
 }
 
 /* ── HINT TIMER ── */
@@ -529,6 +546,7 @@ function updateTimerUI() {
 /* ── NEXT ROUND ── */
 function nextRound(ok) {
     clearInterval(state.timer); clearInterval(state.hintTimer); clearInterval(state.revTimer);
+    cancelDimTimeouts();
     var next = state.currentRound + 1;
     if (next >= ROUNDS.length) { endGame(); return; }
     var ov = document.createElement('div'); ov.className = 'round-transition';
@@ -542,6 +560,7 @@ function nextRound(ok) {
 /* ── END GAME ── */
 async function endGame() {
     clearInterval(state.timer); clearInterval(state.hintTimer); clearInterval(state.revTimer);
+    cancelDimTimeouts();
     var tu = Math.floor((Date.now() - state.startTime) / 1000);
     showLoading(true);
     try {
@@ -635,6 +654,7 @@ function launchConfetti() {
 }
 function restartGame() {
     clearInterval(state.timer); clearInterval(state.hintTimer); clearInterval(state.revTimer);
+    cancelDimTimeouts();
     if (state.waitPoll) { clearInterval(state.waitPoll); state.waitPoll = null; }
     state = {
         playerId: null, playerName: '', currentRound: 0, score: 0, roundsCompleted: 0, startTime: 0,
