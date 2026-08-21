@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Search – VSEATeam</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+    <!-- ═══════════════════════════════════════════════════════════
+     SCREEN 1: REGISTER (hiện ngay khi vào trang)
+══════════════════════════════════════════════════════════════ -->
+    <div id="screen-register" class="screen active">
+        <div class="page-wrap">
+            <div class="card register-card">
+                <div class="card-header">
+                    <div class="logo-tag">VSEATeam</div>
+                    <h1 class="intro-title-sm">WORD SEARCH<br><span>CHALLENGE</span></h1>
+                    <p class="register-sub">🎯 Đi tuyển thành viên – Điền thông tin để tham gia</p>
+                </div>
+                <form id="registerForm" onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label>Họ và tên <span class="required">*</span></label>
+                        <input type="text" id="inp-name" placeholder="Nguyễn Văn A" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Email <span class="required">*</span></label>
+                        <input type="email" id="inp-email" placeholder="example@email.com" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Số điện thoại <span class="required">*</span></label>
+                        <input type="tel" id="inp-phone" placeholder="0901234567" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Lớp <span class="required">*</span></label>
+                        <input type="text" id="inp-class" placeholder="VD: KT47A" required />
+                    </div>
+                    <div id="register-error" class="error-msg" style="display:none"></div>
+                    <button type="submit" class="btn-primary btn-full" id="btn-register">
+                        Xác nhận thông tin ✅
+                    </button>
+                </form>
+                <p class="intro-footer">Gắn kết – Chia sẻ – Lan tỏa ❤️</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+     SCREEN 2: WAITING (chờ admin bắt đầu)
+══════════════════════════════════════════════════════════════ -->
+    <div id="screen-waiting" class="screen">
+        <div class="page-wrap">
+            <div class="waiting-card">
+                <div class="waiting-logo">VSEATeam</div>
+                <div class="waiting-anim">
+                    <div class="waiting-ring"></div>
+                    <div class="waiting-icon">🎮</div>
+                </div>
+                <h2 class="waiting-title">Xin chào, <span id="waiting-name"></span>!</h2>
+                <p class="waiting-desc">✅ Thông tin đã được ghi nhận</p>
+                <div class="waiting-status">
+                    <div class="waiting-dot"></div>
+                    <span>Đang chờ Admin bắt đầu game...</span>
+                </div>
+                <p class="waiting-note">Trang sẽ tự động vào game khi Admin mở.<br>Vui lòng không đóng trình duyệt.</p>
+                <div class="waiting-hints">
+                    <p>📋 Gồm 5 vòng tìm từ ẩn về VSEATeam</p>
+                    <p>⏱ Mỗi vòng có giới hạn thời gian</p>
+                    <p>🎁 Hoàn thành để nhận quà may mắn!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+     SCREEN 3: GAME
+══════════════════════════════════════════════════════════════ -->
+    <div id="screen-game" class="screen">
+        <div class="game-header">
+            <div class="game-info">
+                <div class="round-badge">
+                    Vòng <span id="round-current">1</span>/<span id="round-total">5</span>
+                </div>
+                <div class="score-badge">🏆 <span id="score-display">0</span> điểm</div>
+            </div>
+            <div class="timer-bar">
+                <div class="timer-fill" id="timer-fill"></div>
+            </div>
+            <div class="timer-label">⏱ <span id="timer-display">60</span>s</div>
+        </div>
+
+        <div class="game-body">
+            <div class="clue-panel">
+                <div class="clue-badge">💡 GỢI Ý</div>
+                <div id="round-clue" class="clue-text"></div>
+                <div id="round-hint" class="clue-hint"></div>
+                <div id="letter-boxes" class="letter-boxes"></div>
+                <div id="extra-hint" class="extra-hint" style="display:none"></div>
+                <div id="found-indicator" class="found-indicator" style="display:none">
+                    ✅ Đã tìm thấy: <strong id="found-word"></strong>
+                </div>
+            </div>
+            <div class="grid-wrapper">
+                <div id="word-grid" class="word-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+     SCREEN 4: SPIN WHEEL
+══════════════════════════════════════════════════════════════ -->
+    <div id="screen-spin" class="screen">
+        <div class="page-wrap">
+            <div class="spin-container">
+                <div class="spin-header">
+                    <h2>🎉 Chúc mừng!</h2>
+                    <p>Bạn đã hoàn thành <strong id="spin-rounds">5</strong> vòng với <strong id="spin-score">0</strong>
+                        điểm!</p>
+                    <p class="spin-subtext">Quay vòng quay để nhận phần quà may mắn!</p>
+                </div>
+                <div class="wheel-outer">
+                    <div class="wheel-pointer">▼</div>
+                    <canvas id="spin-canvas" width="320" height="320"></canvas>
+                </div>
+                <button id="btn-spin" class="btn-primary btn-large" onclick="spinWheel()">
+                    🎰 QUAY NGAY!
+                </button>
+                <div id="spin-result" class="spin-result" style="display:none">
+                    <div id="spin-gift-icon">🎁</div>
+                    <div id="spin-gift-name"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+     SCREEN 5: FINISH
+══════════════════════════════════════════════════════════════ -->
+    <div id="screen-finish" class="screen">
+        <div class="page-wrap">
+            <div class="finish-card">
+                <div class="finish-confetti" id="confetti-area"></div>
+                <div class="finish-logo">VSEATeam</div>
+                <div class="finish-icon">🏆</div>
+                <h2 id="finish-name"></h2>
+                <div class="finish-stats">
+                    <div class="stat-item">
+                        <span class="stat-num" id="finish-score">0</span>
+                        <span class="stat-label">Điểm số</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num" id="finish-rounds">0</span>
+                        <span class="stat-label">Vòng hoàn thành</span>
+                    </div>
+                </div>
+                <div class="finish-gift">
+                    🎁 Phần quà của bạn: <strong id="finish-gift-name"></strong>
+                </div>
+                <p class="finish-tagline">Cùng nhau lan tỏa yêu thương ❤️</p>
+                <div class="finish-actions">
+                    <a href="https://www.facebook.com/vseateam" target="_blank" class="btn-primary btn-fb">
+                        📘 Fanpage VSEATeam
+                    </a>
+                </div>
+                <div class="qr-section">
+                    <p>Quét QR để theo dõi fanpage</p>
+                    <div class="qr-placeholder">
+                        <img src="qr-fanpage.png" alt="QR Fanpage VSEATeam"
+                            onerror="this.style.display='none'; document.getElementById('qr-fallback').style.display='flex'" />
+                        <div id="qr-fallback" class="qr-fallback" style="display:none">
+                            <span>QR</span><br>VSEATeam
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOADING OVERLAY -->
+    <div id="loading-overlay" class="loading-overlay" style="display:none">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+
+</html>

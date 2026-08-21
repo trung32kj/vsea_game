@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin – VSEATeam Word Search</title>
+    <link rel="stylesheet" href="admin.css" />
+</head>
+
+<body>
+
+    <!-- LOGIN MODAL -->
+    <div id="login-modal" class="modal-overlay active">
+        <div class="modal-box login-box">
+            <div class="login-logo">VSEATeam</div>
+            <h2>Đăng nhập Admin</h2>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Tên đăng nhập</label>
+                    <input type="text" id="login-user" placeholder="admin" required />
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu</label>
+                    <input type="password" id="login-pass" placeholder="••••••••" required />
+                </div>
+                <div id="login-error" class="error-msg" style="display:none"></div>
+                <button type="submit" class="btn-primary btn-full">Đăng nhập</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN ADMIN -->
+    <div id="admin-app" style="display:none">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <span class="brand-icon">🏆</span>
+                <span class="brand-text">VSEATeam<br><small>Admin Panel</small></span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard', this)">
+                    📊 Tổng quan
+                </a>
+                <a href="#" class="nav-item" data-tab="players" onclick="switchTab('players', this)">
+                    👥 Người chơi
+                </a>
+                <a href="#" class="nav-item" data-tab="gifts" onclick="switchTab('gifts', this)">
+                    🎁 Quà tặng
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn-logout" onclick="handleLogout()">🚪 Đăng xuất</button>
+            </div>
+        </aside>
+
+        <!-- HAMBURGER (mobile) -->
+        <button class="hamburger" id="hamburger" onclick="toggleSidebar()">☰</button>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <!-- ── DASHBOARD ── -->
+            <div id="tab-dashboard" class="tab-panel active">
+                <div class="page-header">
+                    <h1>📊 Tổng quan</h1>
+                    <button class="btn-primary btn-sm" onclick="loadDashboard()">🔄 Làm mới</button>
+                </div>
+
+                <!-- GAME SESSION CONTROL -->
+                <div class="card game-control-card">
+                    <div class="game-control-inner">
+                        <div>
+                            <div class="game-status-label">Trạng thái game</div>
+                            <div id="game-status-badge" class="game-status-badge badge-stopped">⏸ Chưa mở</div>
+                        </div>
+                        <div class="game-control-btns">
+                            <button id="btn-start-game" class="btn-start-game" onclick="startGameSession()">
+                                ▶ Bắt đầu game
+                            </button>
+                            <button id="btn-stop-game" class="btn-stop-game" onclick="stopGameSession()"
+                                style="display:none">
+                                ⏹ Dừng game
+                            </button>
+                        </div>
+                    </div>
+                    <p class="game-control-note">
+                        Khi bắt đầu: số lượng quà reset về ban đầu và người chơi có thể vào game.
+                    </p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card blue">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <div class="stat-num" id="stat-players">—</div>
+                            <div class="stat-label">Người đăng ký</div>
+                        </div>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="stat-icon">🎮</div>
+                        <div class="stat-info">
+                            <div class="stat-num" id="stat-results">—</div>
+                            <div class="stat-label">Lượt chơi</div>
+                        </div>
+                    </div>
+                    <div class="stat-card gold">
+                        <div class="stat-icon">🎁</div>
+                        <div class="stat-info">
+                            <div class="stat-num" id="stat-gifts">—</div>
+                            <div class="stat-label">Quà đã phát</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">📦 Trạng thái quà tặng</div>
+                    <div id="gift-status-list" class="gift-status-list">Đang tải...</div>
+                </div>
+            </div>
+
+            <!-- ── PLAYERS ── -->
+            <div id="tab-players" class="tab-panel">
+                <div class="page-header">
+                    <h1>👥 Người chơi</h1>
+                    <div class="header-actions">
+                        <input type="text" id="search-input" placeholder="🔍 Tìm theo tên, email..."
+                            oninput="filterPlayers()" />
+                        <button class="btn-primary btn-sm" onclick="loadPlayers()">🔄 Làm mới</button>
+                        <button class="btn-outline btn-sm" onclick="exportCSV()">📥 Xuất CSV</button>
+                    </div>
+                </div>
+
+                <div class="card table-card">
+                    <div class="table-wrap">
+                        <table id="players-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Họ và tên</th>
+                                    <th>Email</th>
+                                    <th>SĐT</th>
+                                    <th>Lớp</th>
+                                    <th>Điểm</th>
+                                    <th>Vòng</th>
+                                    <th>Phần quà</th>
+                                    <th>Thời gian</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="players-tbody">
+                                <tr>
+                                    <td colspan="10" class="loading-row">Đang tải...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── GIFTS ── -->
+            <div id="tab-gifts" class="tab-panel">
+                <div class="page-header">
+                    <h1>🎁 Quản lý quà tặng</h1>
+                    <div class="header-actions">
+                        <button class="btn-primary btn-sm" onclick="openGiftModal()">+ Thêm quà</button>
+                        <button class="btn-outline btn-sm" onclick="resetGifts()">🔄 Reset số lượng</button>
+                    </div>
+                </div>
+
+                <div class="prob-note card">
+                    <strong>⚠️ Lưu ý tỷ lệ:</strong> Tổng tỷ lệ tất cả quà nên ≤ 100%. Phần còn lại là "không trúng
+                    thưởng".
+                    <span id="total-prob-display"></span>
+                </div>
+
+                <div class="card table-card">
+                    <div class="table-wrap">
+                        <table id="gifts-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Tên quà</th>
+                                    <th>Tỷ lệ (%)</th>
+                                    <th>Số lượng ban đầu</th>
+                                    <th>Còn lại</th>
+                                    <th>Đã phát</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gifts-tbody">
+                                <tr>
+                                    <td colspan="7" class="loading-row">Đang tải...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- GIFT MODAL -->
+    <div id="gift-modal" class="modal-overlay" style="display:none">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="gift-modal-title">Thêm quà</h3>
+                <button class="modal-close" onclick="closeGiftModal()">✕</button>
+            </div>
+            <form onsubmit="saveGift(event)">
+                <div class="form-group">
+                    <label>Tên quà <span class="required">*</span></label>
+                    <input type="text" id="gift-name" placeholder="VD: Voucher 50k" required />
+                </div>
+                <div class="form-group">
+                    <label>Tỷ lệ trúng (%) <span class="required">*</span></label>
+                    <input type="number" id="gift-prob" min="0" max="100" step="0.1" placeholder="VD: 10" required />
+                </div>
+                <div class="form-group">
+                    <label>Số lượng <span class="required">*</span></label>
+                    <input type="number" id="gift-qty" min="0" placeholder="VD: 50" required />
+                </div>
+                <div id="gift-modal-error" class="error-msg" style="display:none"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline" onclick="closeGiftModal()">Hủy</button>
+                    <button type="submit" class="btn-primary">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONFIRM MODAL -->
+    <div id="confirm-modal" class="modal-overlay" style="display:none">
+        <div class="modal-box modal-sm">
+            <h3 id="confirm-title">Xác nhận</h3>
+            <p id="confirm-message"></p>
+            <div class="modal-footer">
+                <button class="btn-outline" onclick="closeConfirm()">Hủy</button>
+                <button class="btn-danger" id="confirm-ok">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+
+</html>
