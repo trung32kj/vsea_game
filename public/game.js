@@ -114,7 +114,7 @@ function showLoading(v) {
 // ── CONFIG: URL gốc của PHP backend (AZDIGI) ─────────────────────
 const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? ''
-    : 'https://alprotrle.xyz';
+    : 'https://mik.azdigi.shop';
 
 // ── GAME STATUS CHECK ─────────────────────────────────────────────
 async function checkGameActive() {

@@ -9,6 +9,8 @@ define('DB_PORT', 3306);
 // ── CORS: cho phép GitHub Pages gọi API ──────────────────────────
 $allowed_origins = [
     'https://trung32kj.github.io',
+    'https://mik.azdigi.shop',
+    'https://www.mik.azdigi.shop',
     'https://alprotrle.xyz',
     'https://www.alprotrle.xyz',
     'http://localhost',
