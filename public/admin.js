@@ -265,7 +265,7 @@ function renderGifts(gifts) {
           <button class="btn-icon" title="Sửa"
             onclick="openGiftModal(${g.id})">✏️</button>
           <button class="btn-icon del" title="Xóa"
-            {"success":true,"affected_rows":1,"error":"","id_tested":5,"method":"GET"}
+            onclick="confirmDeleteGift(${g.id}, '${escHtml(g.name)}')">🗑️</button>
         </td>
       </tr>`;
     }).join('');
