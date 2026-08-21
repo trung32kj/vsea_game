@@ -1,104 +1,133 @@
 /* ══════════════════════════════════════════════════════════════
-   VSEATeam Word Search – Game Logic
+   VSEATeam Block Word – Game Logic
+   Mechanic: Kéo/đặt hình khối chữ vào đúng vị trí trên lưới 11x11
 ══════════════════════════════════════════════════════════════ */
 
+const GRID_SIZE = 11;
+
 // ── ROUND DEFINITIONS ─────────────────────────────────────────────
-// display  : từ gốc tiếng Việt (chỉ hiện SAU khi tìm đúng)
-// word     : chuỗi không dấu dùng để đặt vào lưới
-// clue     : mô tả gợi ý (hiện ngay từ đầu)
-// hints[]  : gợi ý thêm lần lượt sau mỗi 60s – KHÔNG chứa đáp án
-// difficulty:
-//   1 – dễ  : chỉ đặt ngang/dọc, lưới 12x12, nhiễu ít
-//   2 – tb  : ngang/dọc/chéo, lưới 14x14
-//   3 – khó : mọi hướng + đảo ngược, lưới 15x15, nhiễu chứa chữ của từ
+// pieces: mỗi piece là { label, cells: [[r,c],...] } — tọa độ tương đối
+// targetWord: chữ hiển thị trên lưới (không dấu, uppercase)
+// placement: vị trí đặt từng piece trên lưới [[anchorR, anchorC], ...]
 const ROUNDS = [
     {
         clue: 'Tên viết tắt hoặc tên gọi ngắn gọn của Đội',
         display: 'VSEATEAM',
-        word: 'VSEATEAM',
-        hints: [
-            '💬 Gợi ý 1: Gồm 8 chữ cái, bắt đầu bằng chữ V',
-            '💬 Gợi ý 2: Chứa cụm "SEA" ở giữa',
-            '💬 Gợi ý 3: Kết thúc bằng "TEAM"'
+        timeLimit: 120,
+        hints: ['💬 Gồm 8 chữ cái, bắt đầu bằng V', '💬 Chứa "SEA" ở giữa', '💬 Kết thúc bằng "TEAM"'],
+        pieces: [
+            // 1 hình thẳng ngang 8 ô
+            {
+                label: 'VSEATEAM', letters: ['V', 'S', 'E', 'A', 'T', 'E', 'A', 'M'],
+                cells: [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [0, 7]]
+            }
         ],
-        difficulty: 1,
-        timeLimit: 120
-    },
-    {
-        clue: 'Số năm thành lập và hoạt động của Đội (viết bằng chữ)',
-        display: 'MƯỜI SÁU NĂM',
-        word: 'MUOISAUNAM',
-        hints: [
-            '💬 Gợi ý 1: Gồm 10 chữ cái (không dấu)',
-            '💬 Gợi ý 2: Đội đã hoạt động hơn 15 năm',
-            '💬 Gợi ý 3: Con số nằm giữa 15 và 17'
-        ],
-        difficulty: 1,
-        timeLimit: 120
+        // vị trí đặt đúng trên lưới (anchor = ô đầu tiên)
+        targets: [{ r: 5, c: 1 }]
     },
     {
         clue: 'Khoa mà Đội VSEATeam trực thuộc',
         display: 'KINH TẾ',
-        word: 'KINHTE',
-        hints: [
-            '💬 Gợi ý 1: Gồm 6 chữ cái (không dấu)',
-            '💬 Gợi ý 2: Liên quan đến tài chính, thương mại',
-            '💬 Gợi ý 3: Bắt đầu bằng chữ K'
+        timeLimit: 90,
+        hints: ['💬 Gồm 6 chữ (bỏ dấu)', '💬 Liên quan tài chính', '💬 Bắt đầu bằng K'],
+        pieces: [
+            // KINHTE — hình chữ L: KINH dọc 4 ô, TE ngang từ cuối
+            {
+                label: 'KINH TẾ', letters: ['K', 'I', 'N', 'H', 'T', 'E'],
+                cells: [[0, 0], [1, 0], [2, 0], [3, 0], [3, 1], [3, 2]]
+            }
         ],
-        difficulty: 2,
-        timeLimit: 90
+        targets: [{ r: 3, c: 4 }]
+    },
+    {
+        clue: 'Số năm thành lập và hoạt động của Đội (viết bằng chữ)',
+        display: 'MƯỜI SÁU NĂM',
+        timeLimit: 120,
+        hints: ['💬 Gồm 10 chữ (bỏ dấu)', '💬 Hơn 15 năm', '💬 Giữa 15 và 17'],
+        pieces: [
+            // MUOI — thẳng ngang 4
+            {
+                label: 'MƯỜI', letters: ['M', 'U', 'O', 'I'],
+                cells: [[0, 0], [0, 1], [0, 2], [0, 3]]
+            },
+            // SAU — thẳng dọc 3
+            {
+                label: 'SÁU', letters: ['S', 'A', 'U'],
+                cells: [[0, 0], [1, 0], [2, 0]]
+            },
+            // NAM — chéo 3 ô (↘)
+            {
+                label: 'NĂM', letters: ['N', 'A', 'M'],
+                cells: [[0, 0], [1, 1], [2, 2]]
+            }
+        ],
+        targets: [{ r: 1, c: 1 }, { r: 1, c: 6 }, { r: 4, c: 1 }]
     },
     {
         clue: 'Tên hoạt động thiện nguyện của Đội vào dịp Trung thu',
         display: 'TRUNG THU NHÂN ÁI',
-        word: 'TRUNGTHUNAHAI',
-        hints: [
-            '💬 Gợi ý 1: Gồm 13 chữ cái (không dấu)',
-            '💬 Gợi ý 2: Tên bắt đầu bằng "TRUNG THU"',
-            '💬 Gợi ý 3: Kết thúc bằng 2 chữ mang ý nghĩa yêu thương'
+        timeLimit: 90,
+        hints: ['💬 13 chữ (bỏ dấu)', '💬 Bắt đầu "TRUNG THU"', '💬 Kết thúc mang ý nghĩa yêu thương'],
+        pieces: [
+            // TRUNGTH — thẳng ngang 7
+            {
+                label: 'TRUNG THU', letters: ['T', 'R', 'U', 'N', 'G', 'T', 'H', 'U'],
+                cells: [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [0, 7]]
+            },
+            // NHANAI — chữ L ngược: NHAN dọc 4, AI ngang
+            {
+                label: 'NHÂN ÁI', letters: ['N', 'H', 'A', 'N', 'A', 'I'],
+                cells: [[0, 0], [1, 0], [2, 0], [3, 0], [3, 1], [3, 2]]
+            }
         ],
-        difficulty: 2,
-        timeLimit: 90
+        targets: [{ r: 2, c: 1 }, { r: 4, c: 5 }]
     },
     {
         clue: 'Tên hoạt động thiện nguyện của Đội vào dịp Tết',
         display: 'XUÂN YÊU THƯƠNG',
-        word: 'XUANYEUTHUONG',
-        hints: [
-            '💬 Gợi ý 1: Gồm 13 chữ cái (không dấu)',
-            '💬 Gợi ý 2: Bắt đầu bằng mùa đầu tiên trong năm',
-            '💬 Gợi ý 3: Chứa cụm "YEUTHUONG" ở nửa sau'
+        timeLimit: 90,
+        hints: ['💬 13 chữ (bỏ dấu)', '💬 Bắt đầu bằng mùa đầu năm', '💬 Chứa "YEUTHUONG"'],
+        pieces: [
+            // XUAN — thẳng dọc 4
+            {
+                label: 'XUÂN', letters: ['X', 'U', 'A', 'N'],
+                cells: [[0, 0], [1, 0], [2, 0], [3, 0]]
+            },
+            // YEU — chéo ↘ 3
+            {
+                label: 'YÊU', letters: ['Y', 'E', 'U'],
+                cells: [[0, 0], [1, 1], [2, 2]]
+            },
+            // THUONG — chữ L: THU ngang 3, ONG dọc 3 từ cuối
+            {
+                label: 'THƯƠNG', letters: ['T', 'H', 'U', 'O', 'N', 'G'],
+                cells: [[0, 0], [0, 1], [0, 2], [1, 2], [2, 2], [3, 2]]
+            }
         ],
-        difficulty: 3,
-        timeLimit: 90
+        targets: [{ r: 1, c: 1 }, { r: 2, c: 4 }, { r: 4, c: 6 }]
     }
 ];
-
-// Grid size per difficulty
-const GRID_SIZES = { 1: 12, 2: 14, 3: 15 };
-
-// Allowed directions per difficulty
-const DIRS_ALL = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]];
-const DIRS_EASY = [[0, 1], [1, 0]]; // chỉ ngang + dọc xuôi
-const DIRS_MED = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1]]; // ngang dọc + 2 chéo
-
-function getDirs(difficulty) {
-    if (difficulty === 1) return DIRS_EASY;
-    if (difficulty === 2) return DIRS_MED;
-    return DIRS_ALL;
-}
 
 // ── STATE ─────────────────────────────────────────────────────────
 let state = {
     playerId: null, playerName: '',
     currentRound: 0, score: 0, roundsCompleted: 0,
-    startTime: 0,
-    timer: null, timeLeft: 0,
-    hintTimer: null, hintIndex: 0, hintIntervalSec: 60,
+    startTime: 0, timer: null, timeLeft: 0,
+    hintTimer: null, hintIndex: 0,
     gifts: [], giftName: '', wonGift: false,
-    gridData: [], gridSize: 0,
-    selectedCells: [], isDragging: false, foundCells: new Set(),
-    wordCells: new Set()
+
+    // grid state
+    grid: [],           // 11x11, mỗi ô {letter, pieceIdx, placed}
+    pieces: [],         // danh sách piece của vòng hiện tại
+    rotations: [],      // số lần xoay của từng piece
+    placed: [],         // piece nào đã đặt đúng
+
+    // drag state
+    dragging: null,     // {pieceIdx, offsetR, offsetC}
+    previewCells: [],   // ô đang preview khi kéo
+    previewValid: false,
+
+    waitingPoll: null
 };
 
 // ── UTILS ─────────────────────────────────────────────────────────
@@ -111,13 +140,26 @@ function showLoading(v) {
     document.getElementById('loading-overlay').style.display = v ? 'flex' : 'none';
 }
 
-// ── CONFIG: cùng server AZDIGI → dùng relative URL ───────────────
-const API = '';
+// ── ROTATE CELLS 90° CW ──────────────────────────────────────────
+function rotateCells(cells) {
+    // (r,c) → (c, -r) rồi normalize
+    const rotated = cells.map(([r, c]) => [c, -r]);
+    const minR = Math.min(...rotated.map(([r]) => r));
+    const minC = Math.min(...rotated.map(([, c]) => c));
+    return rotated.map(([r, c]) => [r - minR, c - minC]);
+}
+
+function getRotatedCells(pieceIdx) {
+    let cells = [...state.pieces[pieceIdx].cells.map(c => [...c])];
+    const times = state.rotations[pieceIdx] % 4;
+    for (let i = 0; i < times; i++) cells = rotateCells(cells);
+    return cells;
+}
 
 // ── GAME STATUS CHECK ─────────────────────────────────────────────
 async function checkGameActive() {
     try {
-        const res = await fetch(`${API}/api/game.php?action=status`);
+        const res = await fetch('/api/game.php?action=status');
         const data = await res.json();
         return data.active;
     } catch { return false; }
@@ -132,14 +174,11 @@ async function handleRegister(e) {
     const className = document.getElementById('inp-class').value.trim();
     const errEl = document.getElementById('register-error');
     errEl.style.display = 'none';
-
     document.getElementById('btn-register').disabled = true;
     showLoading(true);
-
     try {
-        const res = await fetch(`${API}/api/game.php?action=register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        const res = await fetch('/api/game.php?action=register', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({ fullName, email, phone, className })
         });
@@ -150,152 +189,354 @@ async function handleRegister(e) {
             state.score = 0; state.roundsCompleted = 0;
             state.currentRound = 0; state.startTime = Date.now();
             showLoading(false);
-            if (data.gameActive) {
-                // Game đang mở → vào chơi ngay
-                startRound(0);
-            } else {
-                // Game chưa mở → vào màn chờ
-                showWaiting();
-            }
-        } else {
-            throw new Error(data.message || 'Đăng ký thất bại');
-        }
+            if (data.gameActive) startRound(0);
+            else showWaiting();
+        } else throw new Error(data.message || 'Đăng ký thất bại');
     } catch (err) {
         showLoading(false);
-        errEl.textContent = err.message;
-        errEl.style.display = 'block';
+        errEl.textContent = err.message; errEl.style.display = 'block';
         document.getElementById('btn-register').disabled = false;
     }
 }
 
-// ── WAITING SCREEN ────────────────────────────────────────────────
-let waitingPoll = null;
-
+// ── WAITING ───────────────────────────────────────────────────────
 function showWaiting() {
     document.getElementById('waiting-name').textContent = state.playerName;
     showScreen('screen-waiting');
-    // Poll mỗi 3s cho đến khi admin mở game
-    waitingPoll = setInterval(async () => {
+    state.waitingPoll = setInterval(async () => {
         const active = await checkGameActive();
         if (active) {
-            clearInterval(waitingPoll);
-            waitingPoll = null;
+            clearInterval(state.waitingPoll); state.waitingPoll = null;
             state.startTime = Date.now();
             startRound(0);
         }
     }, 3000);
 }
 
-// ── LETTER BOXES (ô số chữ cái) ───────────────────────────────────
-// Hiện các ô trống theo số chữ của display (tính theo từng "từ" trong cụm)
-function renderLetterBoxes(display, revealed) {
-    const container = document.getElementById('letter-boxes');
-    // display VD: "MƯỜI SÁU NĂM"  → tách từng chữ cái, khoảng trắng là dấu cách
-    const chars = display.split('');
-    container.innerHTML = chars.map(ch => {
-        if (ch === ' ') return '<span class="lb-space"></span>';
-        const show = revealed && revealed.includes(ch.toUpperCase());
-        return `<span class="lb-cell">${show ? ch : ''}</span>`;
-    }).join('');
-}
-
-// ── GRID GENERATION ───────────────────────────────────────────────
-function generateGrid(word, difficulty) {
-    const size = GRID_SIZES[difficulty] || 15;
-    const dirs = getDirs(difficulty);
-    const grid = Array.from({ length: size }, () => Array(size).fill(''));
-    const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-    // Filler pool: difficulty 3 → nhiều chữ cái giống từ hơn
-    function randomChar() {
-        if (difficulty === 3 && Math.random() < 0.35) {
-            return word[Math.floor(Math.random() * word.length)];
-        }
-        return ALPHA[Math.floor(Math.random() * ALPHA.length)];
-    }
-
-    const wordCells = [];
-    let placed = false, attempts = 0;
-    while (!placed && attempts < 300) {
-        attempts++;
-        const dir = dirs[Math.floor(Math.random() * dirs.length)];
-        const [dr, dc] = dir;
-        const minR = dr < 0 ? word.length - 1 : 0;
-        const minC = dc < 0 ? word.length - 1 : 0;
-        const maxR = dr === 0 ? size : (dr > 0 ? size - word.length : word.length - 1);
-        const maxC = dc === 0 ? size : (dc > 0 ? size - word.length : word.length - 1);
-        if (maxR <= minR || maxC <= minC) continue;
-
-        const startR = Math.floor(Math.random() * (maxR - minR)) + minR;
-        const startC = Math.floor(Math.random() * (maxC - minC)) + minC;
-
-        let ok = true;
-        for (let i = 0; i < word.length; i++) {
-            const r = startR + i * dr, c = startC + i * dc;
-            if (r < 0 || r >= size || c < 0 || c >= size) { ok = false; break; }
-            if (grid[r][c] !== '' && grid[r][c] !== word[i]) { ok = false; break; }
-        }
-        if (ok) {
-            wordCells.length = 0;
-            for (let i = 0; i < word.length; i++) {
-                const r = startR + i * dr, c = startC + i * dc;
-                grid[r][c] = word[i];
-                wordCells.push(`${r},${c}`);
-            }
-            placed = true;
-        }
-    }
-
-    for (let r = 0; r < size; r++)
-        for (let c = 0; c < size; c++)
-            if (grid[r][c] === '') grid[r][c] = randomChar();
-
-    return { grid, wordCells, size };
-}
-
-// ── ROUND START ───────────────────────────────────────────────────
+// ── INIT ROUND ────────────────────────────────────────────────────
 function startRound(idx) {
     if (idx >= ROUNDS.length) { endGame(); return; }
-
-    // Clear hint timer from previous round
-    clearInterval(state.hintTimer);
-    state.hintIndex = 0;
-
+    clearInterval(state.timer); clearInterval(state.hintTimer);
     state.currentRound = idx;
-    state.foundCells = new Set();
-    state.selectedCells = [];
-    state.isDragging = false;
+    state.hintIndex = 0;
+    state.placed = [];
 
     const round = ROUNDS[idx];
-    const { grid, wordCells, size } = generateGrid(round.word, round.difficulty);
-    state.gridData = grid;
-    state.gridSize = size;
-    state.wordCells = new Set(wordCells);
+
+    // Build pieces với rotation=0
+    state.pieces = round.pieces.map(p => ({ ...p, cells: p.cells.map(c => [...c]) }));
+    state.rotations = round.pieces.map(() => 0);
+
+    // Build grid 11x11
+    state.grid = Array.from({ length: GRID_SIZE }, () =>
+        Array.from({ length: GRID_SIZE }, () => ({ letter: '', pieceIdx: -1, correct: false }))
+    );
+
+    // Đặt target letters lên grid (hint cells)
+    round.pieces.forEach((piece, pi) => {
+        const anchor = round.targets[pi];
+        piece.cells.forEach(([dr, dc], li) => {
+            const r = anchor.r + dr, c = anchor.c + dc;
+            if (r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE) {
+                state.grid[r][c].letter = piece.letters[li];
+                state.grid[r][c].pieceIdx = pi;
+            }
+        });
+    });
 
     // HUD
     document.getElementById('round-current').textContent = idx + 1;
     document.getElementById('round-total').textContent = ROUNDS.length;
     document.getElementById('score-display').textContent = state.score;
     document.getElementById('round-clue').textContent = round.clue;
-    document.getElementById('round-hint').textContent =
-        `📏 Từ gồm ${round.display.replace(/\s/g, '').length} chữ cái`;
+    document.getElementById('round-display').textContent = round.display;
     document.getElementById('found-indicator').style.display = 'none';
 
-    // Extra hint vùng (ẩn ban đầu)
     const extraEl = document.getElementById('extra-hint');
-    extraEl.style.display = 'none';
-    extraEl.textContent = '';
+    extraEl.style.display = 'none'; extraEl.textContent = '';
 
-    // Letter boxes
-    renderLetterBoxes(round.display, null);
-
-    renderGrid(size);
+    renderGrid();
+    renderPieces();
     startTimer(round.timeLimit);
     startHintTimer(round);
     showScreen('screen-game');
 }
 
-// ── HINT TIMER (mỗi 60s hiện 1 gợi ý thêm) ───────────────────────
+// ── RENDER GRID ───────────────────────────────────────────────────
+function renderGrid() {
+    const container = document.getElementById('word-grid');
+    container.innerHTML = '';
+    container.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
+
+    for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+            const cell = document.createElement('div');
+            const gCell = state.grid[r][c];
+            cell.className = 'grid-cell';
+            cell.dataset.r = r; cell.dataset.c = c;
+
+            if (gCell.letter) {
+                cell.classList.add('target-cell');
+                cell.textContent = gCell.letter;
+                if (gCell.correct) cell.classList.add('correct-cell');
+            }
+
+            // Drop events
+            cell.addEventListener('dragover', e => { e.preventDefault(); onDragOver(r, c); });
+            cell.addEventListener('dragleave', () => clearPreview());
+            cell.addEventListener('drop', e => { e.preventDefault(); onDrop(r, c); });
+
+            // Touch
+            cell.addEventListener('touchmove', onTouchMoveGrid, { passive: false });
+            cell.addEventListener('touchend', onTouchEndGrid);
+
+            container.appendChild(cell);
+        }
+    }
+}
+
+// ── RENDER PIECES ─────────────────────────────────────────────────
+function renderPieces() {
+    const container = document.getElementById('pieces-tray');
+    container.innerHTML = '';
+
+    state.pieces.forEach((piece, pi) => {
+        if (state.placed.includes(pi)) return; // đã đặt xong
+
+        const cells = getRotatedCells(pi);
+        const maxR = Math.max(...cells.map(([r]) => r));
+        const maxC = Math.max(...cells.map(([, c]) => c));
+        const CELL_PX = 32;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'piece-wrap';
+        wrap.title = 'Click để xoay • Kéo vào lưới';
+
+        const board = document.createElement('div');
+        board.className = 'piece-board';
+        board.style.width = `${(maxC + 1) * CELL_PX + maxC * 2}px`;
+        board.style.height = `${(maxR + 1) * CELL_PX + maxR * 2}px`;
+        board.style.position = 'relative';
+
+        cells.forEach(([r, c], li) => {
+            const cell = document.createElement('div');
+            cell.className = 'piece-cell';
+            cell.textContent = piece.letters[li];
+            cell.style.left = `${c * (CELL_PX + 2)}px`;
+            cell.style.top = `${r * (CELL_PX + 2)}px`;
+            board.appendChild(cell);
+        });
+
+        // Label
+        const lbl = document.createElement('div');
+        lbl.className = 'piece-label';
+        lbl.textContent = piece.label;
+
+        wrap.appendChild(board);
+        wrap.appendChild(lbl);
+
+        // Click to rotate
+        wrap.addEventListener('click', () => rotatePiece(pi));
+
+        // Drag
+        wrap.draggable = true;
+        wrap.addEventListener('dragstart', e => onDragStart(e, pi));
+
+        // Touch drag
+        wrap.addEventListener('touchstart', e => onTouchStartPiece(e, pi), { passive: false });
+
+        container.appendChild(wrap);
+    });
+
+    // Thông báo nếu hết piece
+    if (state.placed.length === state.pieces.length) {
+        container.innerHTML = '<div class="all-placed">✅ Tất cả đã đặt đúng!</div>';
+    }
+}
+
+// ── ROTATE PIECE ──────────────────────────────────────────────────
+function rotatePiece(pi) {
+    state.rotations[pi] = (state.rotations[pi] + 1) % 4;
+    renderPieces();
+}
+
+// ── DRAG & DROP (Desktop) ─────────────────────────────────────────
+let dragPieceIdx = -1;
+
+function onDragStart(e, pi) {
+    dragPieceIdx = pi;
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOver(r, c) {
+    if (dragPieceIdx < 0) return;
+    showPreview(dragPieceIdx, r, c);
+}
+
+function onDrop(r, c) {
+    if (dragPieceIdx < 0) return;
+    tryPlace(dragPieceIdx, r, c);
+    clearPreview();
+    dragPieceIdx = -1;
+}
+
+// ── TOUCH DRAG (Mobile) ───────────────────────────────────────────
+let touchPieceIdx = -1;
+let touchFloater = null;
+
+function onTouchStartPiece(e, pi) {
+    e.preventDefault();
+    touchPieceIdx = pi;
+    const touch = e.touches[0];
+
+    // Tạo floater theo ngón tay
+    touchFloater = document.createElement('div');
+    touchFloater.className = 'touch-floater';
+    const cells = getRotatedCells(pi);
+    const CELL_PX = 28;
+    cells.forEach(([r, c], li) => {
+        const cell = document.createElement('div');
+        cell.className = 'piece-cell floater-cell';
+        cell.textContent = state.pieces[pi].letters[li];
+        cell.style.position = 'absolute';
+        cell.style.left = `${c * (CELL_PX + 2)}px`;
+        cell.style.top = `${r * (CELL_PX + 2)}px`;
+        cell.style.width = `${CELL_PX}px`;
+        cell.style.height = `${CELL_PX}px`;
+        cell.style.fontSize = '10px';
+        touchFloater.appendChild(cell);
+    });
+    const maxR = Math.max(...cells.map(([r]) => r));
+    const maxC = Math.max(...cells.map(([, c]) => c));
+    touchFloater.style.width = `${(maxC + 1) * (CELL_PX + 2)}px`;
+    touchFloater.style.height = `${(maxR + 1) * (CELL_PX + 2)}px`;
+    touchFloater.style.left = `${touch.clientX - 20}px`;
+    touchFloater.style.top = `${touch.clientY - 20}px`;
+    document.body.appendChild(touchFloater);
+}
+
+function onTouchMoveGrid(e) {
+    e.preventDefault();
+    if (touchPieceIdx < 0 || !touchFloater) return;
+    const touch = e.touches[0];
+    touchFloater.style.left = `${touch.clientX - 20}px`;
+    touchFloater.style.top = `${touch.clientY - 20}px`;
+
+    // Tìm ô grid dưới ngón tay
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (el && el.classList.contains('grid-cell')) {
+        const r = +el.dataset.r, c = +el.dataset.c;
+        showPreview(touchPieceIdx, r, c);
+    }
+}
+
+function onTouchEndGrid(e) {
+    if (touchPieceIdx < 0) return;
+    const touch = e.changedTouches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (el && el.classList.contains('grid-cell')) {
+        const r = +el.dataset.r, c = +el.dataset.c;
+        tryPlace(touchPieceIdx, r, c);
+    }
+    clearPreview();
+    if (touchFloater) { touchFloater.remove(); touchFloater = null; }
+    touchPieceIdx = -1;
+}
+
+// ── PREVIEW ───────────────────────────────────────────────────────
+function showPreview(pi, anchorR, anchorC) {
+    clearPreview();
+    const cells = getRotatedCells(pi);
+    const round = ROUNDS[state.currentRound];
+    const target = round.targets[pi];
+
+    // Kiểm tra có khớp target không
+    const valid = cells.every(([dr, dc], li) => {
+        const r = anchorR + dr, c = anchorC + dc;
+        const tr = target.r + round.pieces[pi].cells[0][0]; // sẽ tính lại
+        return r === target.r + round.pieces[pi].cells[li][0] &&
+            c === target.c + round.pieces[pi].cells[li][1];
+    });
+
+    // Tô preview lên grid
+    cells.forEach(([dr, dc]) => {
+        const r = anchorR + dr, c = anchorC + dc;
+        if (r < 0 || r >= GRID_SIZE || c < 0 || c >= GRID_SIZE) return;
+        const el = document.querySelector(`.grid-cell[data-r="${r}"][data-c="${c}"]`);
+        if (el) el.classList.add(valid ? 'preview-valid' : 'preview-invalid');
+    });
+    state.previewCells = cells.map(([dr, dc]) => [anchorR + dr, anchorC + dc]);
+    state.previewValid = valid;
+}
+
+function clearPreview() {
+    document.querySelectorAll('.preview-valid, .preview-invalid')
+        .forEach(el => el.classList.remove('preview-valid', 'preview-invalid'));
+    state.previewCells = [];
+}
+
+// ── TRY PLACE ─────────────────────────────────────────────────────
+function tryPlace(pi, anchorR, anchorC) {
+    if (state.placed.includes(pi)) return;
+
+    const cells = getRotatedCells(pi);
+    const round = ROUNDS[state.currentRound];
+    const target = round.targets[pi];
+    const piece = round.pieces[pi];
+
+    // Tính tọa độ target với rotation hiện tại
+    let targetCells = piece.cells.map(c => [...c]);
+    const times = state.rotations[pi] % 4;
+    for (let i = 0; i < times; i++) targetCells = rotateCells(targetCells);
+
+    // Kiểm tra anchor có khớp với target không
+    const correct = cells.every(([dr, dc], li) => {
+        return (anchorR + dr) === (target.r + targetCells[li][0]) &&
+            (anchorC + dc) === (target.c + targetCells[li][1]);
+    });
+
+    if (correct) {
+        // Đặt đúng → mark correct
+        cells.forEach(([dr, dc]) => {
+            const r = anchorR + dr, c = anchorC + dc;
+            if (r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE) {
+                state.grid[r][c].correct = true;
+            }
+        });
+        state.placed.push(pi);
+
+        // Hiệu ứng
+        cells.forEach(([dr, dc]) => {
+            const el = document.querySelector(`.grid-cell[data-r="${anchorR + dr}"][data-c="${anchorC + dc}"]`);
+            if (el) { el.classList.add('correct-cell'); el.classList.remove('target-cell'); }
+        });
+
+        // Điểm
+        const timeBonus = Math.max(0, Math.floor(state.timeLeft / 5));
+        state.score += 50 + timeBonus;
+        document.getElementById('score-display').textContent = state.score;
+
+        renderPieces();
+
+        // Kiểm tra thắng vòng
+        if (state.placed.length === state.pieces.length) {
+            state.roundsCompleted++;
+            document.getElementById('found-indicator').style.display = 'block';
+            document.getElementById('found-word').textContent = round.display;
+            clearInterval(state.timer); clearInterval(state.hintTimer);
+            setTimeout(() => nextRound(true), 1800);
+        }
+    } else {
+        // Đặt sai → flash đỏ
+        cells.forEach(([dr, dc]) => {
+            const r = anchorR + dr, c = anchorC + dc;
+            const el = document.querySelector(`.grid-cell[data-r="${r}"][data-c="${c}"]`);
+            if (el) { el.classList.add('wrong'); setTimeout(() => el.classList.remove('wrong'), 500); }
+        });
+    }
+}
+
+// ── HINT TIMER ────────────────────────────────────────────────────
 function startHintTimer(round) {
     clearInterval(state.hintTimer);
     state.hintTimer = setInterval(() => {
@@ -303,178 +544,14 @@ function startHintTimer(round) {
             const extraEl = document.getElementById('extra-hint');
             extraEl.textContent = round.hints[state.hintIndex];
             extraEl.style.display = 'block';
-            // flash animation
-            extraEl.classList.remove('hint-flash');
-            void extraEl.offsetWidth;
+            extraEl.classList.remove('hint-flash'); void extraEl.offsetWidth;
             extraEl.classList.add('hint-flash');
             state.hintIndex++;
-        } else {
-            clearInterval(state.hintTimer);
-        }
-    }, state.hintIntervalSec * 1000);
+        } else clearInterval(state.hintTimer);
+    }, 45000); // 45s mỗi gợi ý
 }
 
-// ── RENDER GRID ───────────────────────────────────────────────────
-function renderGrid(size) {
-    const container = document.getElementById('word-grid');
-    // Dùng fr để ô tự co vừa màn hình, không scroll ngang
-    container.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-    container.innerHTML = '';
-
-    for (let r = 0; r < size; r++) {
-        for (let c = 0; c < size; c++) {
-            const cell = document.createElement('div');
-            cell.className = 'grid-cell';
-            cell.textContent = state.gridData[r][c];
-            cell.dataset.r = r;
-            cell.dataset.c = c;
-            cell.addEventListener('mousedown', onCellStart);
-            cell.addEventListener('mouseover', onCellOver);
-            cell.addEventListener('touchstart', onTouchStart, { passive: false });
-            cell.addEventListener('touchmove', onTouchMove, { passive: false });
-            if (state.foundCells.has(`${r},${c}`)) cell.classList.add('found');
-            container.appendChild(cell);
-        }
-    }
-    document.addEventListener('mouseup', onCellEnd);
-    document.addEventListener('touchend', onTouchEnd);
-}
-
-function getCellEl(r, c) {
-    return document.querySelector(`.grid-cell[data-r="${r}"][data-c="${c}"]`);
-}
-
-// ── SELECTION ─────────────────────────────────────────────────────
-function highlightSelection() {
-    document.getElementById('word-grid')
-        .querySelectorAll('.grid-cell.active').forEach(el => {
-            if (!state.foundCells.has(`${el.dataset.r},${el.dataset.c}`))
-                el.classList.remove('active');
-        });
-    state.selectedCells.forEach(key => {
-        const [r, c] = key.split(',').map(Number);
-        if (!state.foundCells.has(key)) {
-            const el = getCellEl(r, c);
-            if (el) el.classList.add('active');
-        }
-    });
-}
-
-function getLineCells(r1, c1, r2, c2) {
-    if (r1 === r2 && c1 === c2) return [`${r1},${c1}`];
-    const dr = Math.sign(r2 - r1), dc = Math.sign(c2 - c1);
-    const steps = Math.max(Math.abs(r2 - r1), Math.abs(c2 - c1));
-    if (dr !== 0 && dc !== 0 && Math.abs(r2 - r1) !== Math.abs(c2 - c1)) {
-        return Math.abs(r2 - r1) > Math.abs(c2 - c1)
-            ? getLineCells(r1, c1, r2, c1)
-            : getLineCells(r1, c1, r1, c2);
-    }
-    const cells = [];
-    for (let i = 0; i <= steps; i++) cells.push(`${r1 + i * dr},${c1 + i * dc}`);
-    return cells;
-}
-
-let dragStart = null, touchStartCell = null;
-
-function onCellStart(e) {
-    state.isDragging = true;
-    const r = +e.currentTarget.dataset.r, c = +e.currentTarget.dataset.c;
-    dragStart = { r, c };
-    state.selectedCells = [`${r},${c}`];
-    highlightSelection();
-}
-function onCellOver(e) {
-    if (!state.isDragging || !dragStart) return;
-    state.selectedCells = getLineCells(dragStart.r, dragStart.c,
-        +e.currentTarget.dataset.r, +e.currentTarget.dataset.c);
-    highlightSelection();
-}
-function onCellEnd() {
-    if (!state.isDragging) return;
-    state.isDragging = false;
-    checkSelection();
-    dragStart = null;
-}
-function onTouchStart(e) {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (!el || !el.classList.contains('grid-cell')) return;
-    state.isDragging = true;
-    touchStartCell = { r: +el.dataset.r, c: +el.dataset.c };
-    state.selectedCells = [`${touchStartCell.r},${touchStartCell.c}`];
-    highlightSelection();
-}
-function onTouchMove(e) {
-    e.preventDefault();
-    if (!state.isDragging || !touchStartCell) return;
-    const touch = e.touches[0];
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (!el || !el.classList.contains('grid-cell')) return;
-    state.selectedCells = getLineCells(touchStartCell.r, touchStartCell.c,
-        +el.dataset.r, +el.dataset.c);
-    highlightSelection();
-}
-function onTouchEnd() {
-    if (!state.isDragging) return;
-    state.isDragging = false;
-    checkSelection();
-    touchStartCell = null;
-}
-
-// ── CHECK SELECTION ───────────────────────────────────────────────
-function checkSelection() {
-    const selected = state.selectedCells.slice();
-    const selectedStr = selected.join('|');
-    const wordCells = [...state.wordCells];
-    const fwd = wordCells.join('|');
-    const rev = wordCells.slice().reverse().join('|');
-
-    if (selectedStr === fwd || selectedStr === rev) {
-        // ✅ ĐÚNG
-        selected.forEach(key => {
-            state.foundCells.add(key);
-            const [r, c] = key.split(',').map(Number);
-            const el = getCellEl(r, c);
-            if (el) { el.classList.remove('active'); el.classList.add('found'); }
-        });
-
-        clearInterval(state.hintTimer);
-
-        const timeBonus = Math.max(0, Math.floor(state.timeLeft / 5));
-        state.score += 100 + timeBonus;
-        state.roundsCompleted++;
-        document.getElementById('score-display').textContent = state.score;
-
-        const round = ROUNDS[state.currentRound];
-        // Hiện đầy đủ chữ trong ô letter boxes khi đúng
-        renderLetterBoxes(round.display, round.display.replace(/\s/g, '').toUpperCase().split(''));
-
-        document.getElementById('found-word').textContent = round.display;
-        document.getElementById('found-indicator').style.display = 'block';
-
-        clearInterval(state.timer);
-        state.selectedCells = [];
-        setTimeout(() => nextRound(true), 1600);
-    } else {
-        // ❌ SAI – flash đỏ
-        selected.forEach(key => {
-            const [r, c] = key.split(',').map(Number);
-            const el = getCellEl(r, c);
-            if (el && !state.foundCells.has(key)) el.classList.add('wrong');
-        });
-        setTimeout(() => {
-            selected.forEach(key => {
-                const [r, c] = key.split(',').map(Number);
-                const el = getCellEl(r, c);
-                if (el && !state.foundCells.has(key)) el.classList.remove('active', 'wrong');
-            });
-        }, 500);
-        state.selectedCells = [];
-    }
-}
-
-// ── TIMER ──────────────────────────────────────────────────────────
+// ── TIMER ─────────────────────────────────────────────────────────
 function startTimer(seconds) {
     clearInterval(state.timer);
     state.timeLeft = seconds;
@@ -483,12 +560,8 @@ function startTimer(seconds) {
         state.timeLeft--;
         updateTimerUI();
         if (state.timeLeft <= 0) {
-            clearInterval(state.timer);
-            clearInterval(state.hintTimer);
-            // Hết giờ: hiện đáp án trong ô rồi chuyển vòng
-            const round = ROUNDS[state.currentRound];
-            renderLetterBoxes(round.display, round.display.replace(/\s/g, '').toUpperCase().split(''));
-            setTimeout(() => nextRound(false), 1200);
+            clearInterval(state.timer); clearInterval(state.hintTimer);
+            setTimeout(() => nextRound(false), 1000);
         }
     }, 1000);
 }
@@ -502,10 +575,8 @@ function updateTimerUI() {
 
 // ── NEXT ROUND ────────────────────────────────────────────────────
 function nextRound(succeeded) {
-    clearInterval(state.timer);
-    clearInterval(state.hintTimer);
+    clearInterval(state.timer); clearInterval(state.hintTimer);
     const next = state.currentRound + 1;
-
     if (next >= ROUNDS.length) { endGame(); return; }
 
     const overlay = document.createElement('div');
@@ -513,14 +584,10 @@ function nextRound(succeeded) {
     const nextR = ROUNDS[next];
     overlay.innerHTML = `
     <div class="round-transition-card">
-      <h3>${succeeded ? '✅' : '⏰'} Vòng ${state.currentRound + 1}
-        ${succeeded ? 'hoàn thành!' : '– Hết giờ!'}</h3>
-      <p>Chuẩn bị cho vòng tiếp theo</p>
+      <h3>${succeeded ? '✅' : '⏰'} Vòng ${state.currentRound + 1} ${succeeded ? 'hoàn thành!' : '– Hết giờ!'}</h3>
+      <p>Chuẩn bị vòng tiếp theo</p>
       <div class="next-word">Vòng ${next + 1} / ${ROUNDS.length}</div>
       <p style="color:#5f6368;font-size:13px;margin-top:6px">${nextR.clue}</p>
-      <div class="diff-badge diff-${nextR.difficulty}">
-        ${nextR.difficulty === 1 ? '⭐ Dễ' : nextR.difficulty === 2 ? '⭐⭐ Trung bình' : '⭐⭐⭐ Khó'}
-      </div>
     </div>`;
     document.body.appendChild(overlay);
     setTimeout(() => { overlay.remove(); startRound(next); }, 2200);
@@ -528,27 +595,18 @@ function nextRound(succeeded) {
 
 // ── END GAME ──────────────────────────────────────────────────────
 async function endGame() {
-    clearInterval(state.timer);
-    clearInterval(state.hintTimer);
+    clearInterval(state.timer); clearInterval(state.hintTimer);
     const timeUsed = Math.floor((Date.now() - state.startTime) / 1000);
     showLoading(true);
     try {
-        const res = await fetch(`${API}/api/game.php?action=result`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        const res = await fetch('/api/game.php?action=result', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({
-                playerId: state.playerId, score: state.score,
-                timeUsed, roundsCompleted: state.roundsCompleted
-            })
+            body: JSON.stringify({ playerId: state.playerId, score: state.score, timeUsed, roundsCompleted: state.roundsCompleted })
         });
         const data = await res.json();
-        state.giftName = data.giftName;
-        state.wonGift = data.wonGift;
-    } catch {
-        state.giftName = 'Chúc mừng bạn đã tham gia!';
-        state.wonGift = false;
-    }
+        state.giftName = data.giftName; state.wonGift = data.wonGift;
+    } catch { state.giftName = 'Chúc mừng bạn đã tham gia!'; state.wonGift = false; }
     showLoading(false);
     document.getElementById('spin-score').textContent = state.score;
     document.getElementById('spin-rounds').textContent = state.roundsCompleted;
@@ -557,74 +615,58 @@ async function endGame() {
 }
 
 // ── SPIN WHEEL ────────────────────────────────────────────────────
-const WHEEL_COLORS = [
-    '#1a73e8', '#f5a623', '#34a853', '#ea4335',
-    '#9c27b0', '#00bcd4', '#ff5722', '#607d8b', '#e91e63', '#4caf50'
-];
+const WHEEL_COLORS = ['#1a73e8', '#f5a623', '#34a853', '#ea4335', '#9c27b0', '#00bcd4', '#ff5722', '#607d8b', '#e91e63', '#4caf50'];
 
 async function loadGiftsAndDrawWheel() {
     try {
-        const res = await fetch(`${API}/api/game.php?action=gifts_public`, { credentials: 'include' });
+        const res = await fetch('/api/game.php?action=gifts_public', { credentials: 'include' });
         const data = await res.json();
-        state.gifts = data.gifts && data.gifts.length > 0
-            ? data.gifts : [{ name: 'Chúc mừng!', probability: 100 }];
+        state.gifts = data.gifts && data.gifts.length > 0 ? data.gifts : [{ name: 'Chúc mừng!', probability: 100 }];
     } catch {
-        state.gifts = [
-            { name: 'Sticker VSEATeam', probability: 30 },
-            { name: 'Bookmark xinh', probability: 25 },
-            { name: 'Kẹo ngọt', probability: 25 },
-            { name: 'Voucher 50k', probability: 15 },
-            { name: 'Quà đặc biệt', probability: 5 }
-        ];
+        state.gifts = [{ name: 'Sticker VSEATeam', probability: 30 }, { name: 'Bookmark xinh', probability: 25 },
+        { name: 'Kẹo ngọt', probability: 25 }, { name: 'Voucher 50k', probability: 15 }, { name: 'Quà đặc biệt', probability: 5 }];
     }
     const totalPct = state.gifts.reduce((s, g) => s + g.probability, 0);
-    if (totalPct < 100)
-        state.gifts.push({ name: 'Chúc mừng tham gia!', probability: 100 - totalPct });
+    if (totalPct < 100) state.gifts.push({ name: 'Chúc mừng tham gia!', probability: 100 - totalPct });
     drawWheel(0);
 }
 
 function drawWheel(rotation) {
     const canvas = document.getElementById('spin-canvas');
     const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
-    const cx = W / 2, cy = H / 2, r = W / 2 - 8;
+    const W = canvas.width, H = canvas.height, cx = W / 2, cy = H / 2, r = W / 2 - 8;
     ctx.clearRect(0, 0, W, H);
     const total = state.gifts.reduce((s, g) => s + g.probability, 0);
     let startAngle = rotation;
     state.gifts.forEach((gift, i) => {
         const slice = (gift.probability / total) * 2 * Math.PI;
-        const endAngle = startAngle + slice;
-        ctx.beginPath(); ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, r, startAngle, endAngle); ctx.closePath();
+        const end = startAngle + slice;
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, startAngle, end); ctx.closePath();
         ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length]; ctx.fill();
         ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
         ctx.save(); ctx.translate(cx, cy); ctx.rotate(startAngle + slice / 2);
         ctx.textAlign = 'right'; ctx.fillStyle = '#fff';
         ctx.font = `bold ${Math.min(13, 300 / state.gifts.length)}px sans-serif`;
-        ctx.shadowColor = 'rgba(0,0,0,.3)'; ctx.shadowBlur = 2;
         ctx.fillText(gift.name.length > 14 ? gift.name.substring(0, 13) + '…' : gift.name, r - 10, 5);
         ctx.restore();
-        startAngle = endAngle;
+        startAngle = end;
     });
     ctx.beginPath(); ctx.arc(cx, cy, 22, 0, 2 * Math.PI);
-    ctx.fillStyle = '#fff'; ctx.fill();
-    ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 2; ctx.stroke();
 }
 
 let isSpinning = false;
-
 function spinWheel() {
     if (isSpinning) return;
     isSpinning = true;
     document.getElementById('btn-spin').disabled = true;
     document.getElementById('spin-result').style.display = 'none';
-
     const totalSpins = 5 + Math.random() * 5;
     const duration = 4000;
     const startTime = performance.now();
     const total = state.gifts.reduce((s, g) => s + g.probability, 0);
     let giftIndex = state.gifts.findIndex(g => g.name === state.giftName);
-    if (giftIndex === -1) giftIndex = state.gifts.length - 1;
+    if (giftIndex < 0) giftIndex = state.gifts.length - 1;
     let cum = 0, targetOffset = 0;
     for (let i = 0; i <= giftIndex; i++) {
         const slice = (state.gifts[i].probability / total) * 2 * Math.PI;
@@ -632,7 +674,7 @@ function spinWheel() {
         cum += slice;
     }
     const targetRotation = totalSpins * 2 * Math.PI - targetOffset - Math.PI / 2;
-    function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
+    const easeOut = t => 1 - Math.pow(1 - t, 4);
     function animate(now) {
         const p = Math.min((now - startTime) / duration, 1);
         drawWheel(easeOut(p) * targetRotation);
@@ -677,16 +719,14 @@ function launchConfetti() {
 }
 
 function restartGame() {
-    clearInterval(state.timer);
-    clearInterval(state.hintTimer);
-    if (waitingPoll) { clearInterval(waitingPoll); waitingPoll = null; }
+    clearInterval(state.timer); clearInterval(state.hintTimer);
+    if (state.waitingPoll) { clearInterval(state.waitingPoll); state.waitingPoll = null; }
     state = {
         playerId: null, playerName: '', currentRound: 0, score: 0,
         roundsCompleted: 0, startTime: 0, timer: null, timeLeft: 0,
-        hintTimer: null, hintIndex: 0, hintIntervalSec: 60,
-        gifts: [], giftName: '', wonGift: false,
-        gridData: [], gridSize: 0, selectedCells: [],
-        isDragging: false, foundCells: new Set(), wordCells: new Set()
+        hintTimer: null, hintIndex: 0, gifts: [], giftName: '', wonGift: false,
+        grid: [], pieces: [], rotations: [], placed: [],
+        dragging: null, previewCells: [], previewValid: false, waitingPoll: null
     };
     document.getElementById('registerForm').reset();
     document.getElementById('register-error').style.display = 'none';
@@ -694,9 +734,4 @@ function restartGame() {
     showScreen('screen-register');
 }
 
-// ── INIT ──────────────────────────────────────────────────────────
-// Intro luôn hiện, không khoá nút — người chơi tự vào form
-// Việc chờ admin xảy ra SAU khi đã điền form xong
-window.addEventListener('DOMContentLoaded', () => {
-    // Không cần làm gì thêm, luồng đã xử lý qua handleRegister
-});
+window.addEventListener('DOMContentLoaded', () => { });

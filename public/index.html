@@ -93,18 +93,26 @@
         </div>
 
         <div class="game-body">
+            <!-- Gợi ý -->
             <div class="clue-panel">
                 <div class="clue-badge">💡 GỢI Ý</div>
                 <div id="round-clue" class="clue-text"></div>
-                <div id="round-hint" class="clue-hint"></div>
-                <div id="letter-boxes" class="letter-boxes"></div>
+                <div id="round-display" class="round-display-word"></div>
                 <div id="extra-hint" class="extra-hint" style="display:none"></div>
                 <div id="found-indicator" class="found-indicator" style="display:none">
-                    ✅ Đã tìm thấy: <strong id="found-word"></strong>
+                    ✅ Hoàn thành: <strong id="found-word"></strong>
                 </div>
             </div>
+
+            <!-- Lưới 11x11 -->
             <div class="grid-wrapper">
                 <div id="word-grid" class="word-grid"></div>
+            </div>
+
+            <!-- Khay hình khối -->
+            <div class="pieces-area">
+                <div class="pieces-label">🧩 Hình khối — Click để xoay • Kéo vào lưới</div>
+                <div id="pieces-tray" class="pieces-tray"></div>
             </div>
         </div>
     </div>
