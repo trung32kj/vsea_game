@@ -207,7 +207,7 @@ function confirmDeletePlayer(id, name) {
     showConfirm('Xóa người chơi',
         `Bạn có chắc muốn xóa "${name}"? Hành động này không thể hoàn tác.`,
         async () => {
-            await fetch(`${API}/api/admin.php?action=delete_player&id=${id}`, { method: 'DELETE', ...FETCH_OPTS });
+            await fetch(`${API}/api/admin.php?action=delete_player&id=${id}`, { method: 'POST', ...FETCH_OPTS });
             loadPlayers(); loadDashboard();
         });
 }
@@ -316,7 +316,7 @@ async function saveGift(e) {
         errEl.style.display = 'block';
         return;
     }
-    const method = editingGiftId ? 'PUT' : 'POST';
+    const method = editingGiftId ? 'POST' : 'POST';
     const url = editingGiftId
         ? `${API}/api/admin.php?action=update_gift&id=${editingGiftId}`
         : `${API}/api/admin.php?action=add_gift`;
@@ -339,7 +339,7 @@ async function saveGift(e) {
 function confirmDeleteGift(id, name) {
     showConfirm('Xóa quà tặng', `Bạn có chắc muốn xóa quà "${name}"?`,
         async () => {
-            await fetch(`${API}/api/admin.php?action=delete_gift&id=${id}`, { method: 'DELETE', ...FETCH_OPTS });
+            await fetch(`${API}/api/admin.php?action=delete_gift&id=${id}`, { method: 'POST', ...FETCH_OPTS });
             loadGifts(); loadDashboard();
         });
 }

@@ -121,7 +121,7 @@ if ($method === 'GET' && $action === 'players') {
 }
 
 // ── DELETE PLAYER ─────────────────────────────────────────────────
-if ($method === 'DELETE' && $action === 'delete_player') {
+if (($method === 'DELETE' || $method === 'POST') && $action === 'delete_player') {
     requireAdmin();
     $id   = (int)($_GET['id'] ?? 0);
     $db   = getDB();
@@ -170,7 +170,7 @@ if ($method === 'POST' && $action === 'add_gift') {
 }
 
 // ── UPDATE GIFT ───────────────────────────────────────────────────
-if ($method === 'PUT' && $action === 'update_gift') {
+if (($method === 'PUT' || $method === 'POST') && $action === 'update_gift') {
     requireAdmin();
     $id   = (int)($_GET['id'] ?? 0);
     $body = getBody();
@@ -189,7 +189,7 @@ if ($method === 'PUT' && $action === 'update_gift') {
 }
 
 // ── DELETE GIFT ───────────────────────────────────────────────────
-if ($method === 'DELETE' && $action === 'delete_gift') {
+if (($method === 'DELETE' || $method === 'POST') && $action === 'delete_gift') {
     requireAdmin();
     $id   = (int)($_GET['id'] ?? 0);
     $db   = getDB();
