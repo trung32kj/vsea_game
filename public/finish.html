@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kết quả – VSEATeam</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        body {
+            background: linear-gradient(160deg, #0f2c6e 0%, #1a73e8 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="finish-card">
+        <div class="finish-confetti" id="confetti-area"></div>
+        <div class="finish-logo">VSEATeam</div>
+        <div class="finish-icon">🏆</div>
+        <h2 id="finish-name"></h2>
+
+        <div class="finish-stats">
+            <div class="stat-item">
+                <span class="stat-num" id="finish-score">0</span>
+                <span class="stat-label">Điểm số</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-num" id="finish-rounds">0</span>
+                <span class="stat-label">Vòng hoàn thành</span>
+            </div>
+        </div>
+
+        <div class="finish-gift">
+            🎁 Phần quà của bạn: <strong id="finish-gift-name"></strong>
+        </div>
+
+        <p class="finish-tagline">Cùng nhau lan tỏa yêu thương ❤️</p>
+
+        <div class="finish-actions">
+            <a href="https://www.facebook.com/vseateam" target="_blank" class="btn-primary btn-fb">
+                📘 Fanpage VSEATeam
+            </a>
+        </div>
+
+        <div class="qr-section">
+            <p>Quét QR để theo dõi fanpage</p>
+            <div class="qr-placeholder">
+                <img src="qr-fanpage.png" alt="QR Fanpage VSEATeam"
+                    onerror="this.style.display='none'; document.getElementById('qr-fallback').style.display='flex'" />
+                <div id="qr-fallback" class="qr-fallback" style="display:none">
+                    <span>QR</span><br>VSEATeam
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-outline" style="margin-top:16px;width:100%" onclick="location.href='index.html'">
+            🔄 Chơi lại
+        </button>
+    </div>
+
+    <script>
+        // Đọc kết quả từ sessionStorage (game.js sẽ lưu vào đây)
+        var result = JSON.parse(sessionStorage.getItem('vsea_result') || '{}');
+
+        var fn = document.getElementById('finish-name');
+        var fs = document.getElementById('finish-score');
+        var fr = document.getElementById('finish-rounds');
+        var fg = document.getElementById('finish-gift-name');
+
+        if (fn) fn.textContent = result.playerName ? 'Xin chào, ' + result.playerName + '!' : 'Xin chào!';
+        if (fs) fs.textContent = result.score || 0;
+        if (fr) fr.textContent = (result.roundsCompleted || 0) + '/' + (result.totalRounds || 5);
+        if (fg) fg.textContent = result.giftName || '—';
+
+        // Confetti
+        var area = document.getElementById('confetti-area');
+        if (area) {
+            var colors = ['#1a73e8', '#f5a623', '#34a853', '#ea4335', '#9c27b0', '#fff'];
+            for (var i = 0; i < 60; i++) {
+                var p = document.createElement('div');
+                p.className = 'confetti-piece';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.background = colors[Math.floor(Math.random() * colors.length)];
+                p.style.width = p.style.height = (6 + Math.random() * 8) + 'px';
+                p.style.animationDuration = (2 + Math.random() * 3) + 's';
+                p.style.animationDelay = (Math.random() * 2) + 's';
+                area.appendChild(p);
+            }
+        }
+    </script>
+</body>
+
+</html>
