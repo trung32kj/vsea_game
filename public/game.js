@@ -499,7 +499,7 @@ function doReveal2() {
                 if (state.placed.indexOf(wi) >= 0) return;
                 var el = $cell(rc[0], rc[1]);
                 if (el) el.classList.add('hint-border');
-            }, i * 500);
+            }, i * 2000);
             _dimTimeouts.push(tid);
         });
     });

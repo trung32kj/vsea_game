@@ -612,7 +612,8 @@ body {
   width: 32px;
   height: 32px;
   background: var(--blue);
-  color: #fff;
+  color: transparent;
+  /* ẩn chữ */
   font-weight: 900;
   font-size: 11px;
   border-radius: 4px;
@@ -621,6 +622,7 @@ body {
   justify-content: center;
   border: 2px solid var(--blue-dk);
   text-transform: uppercase;
+  user-select: none;
 }
 
 .piece-label {
