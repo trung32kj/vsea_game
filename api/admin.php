@@ -123,12 +123,14 @@ if ($method === 'GET' && $action === 'players') {
 // ── DELETE PLAYER ─────────────────────────────────────────────────
 if (($method === 'DELETE' || $method === 'POST') && $action === 'delete_player') {
     requireAdmin();
-    $id   = (int)($_GET['id'] ?? 0);
+    $body = getBody();
+    $id   = (int)($_GET['id'] ?? $body['id'] ?? 0);
+    if (!$id) jsonOut(['success' => false, 'message' => 'Missing id'], 400);
     $db   = getDB();
     $stmt = $db->prepare("DELETE FROM players WHERE id=?");
     $stmt->bind_param('i', $id);
     $stmt->execute();
-    jsonOut(['success' => true]);
+    jsonOut(['success' => true, 'affected' => $db->affected_rows]);
 }
 
 // ── GET GIFTS ─────────────────────────────────────────────────────
@@ -191,12 +193,15 @@ if (($method === 'PUT' || $method === 'POST') && $action === 'update_gift') {
 // ── DELETE GIFT ───────────────────────────────────────────────────
 if (($method === 'DELETE' || $method === 'POST') && $action === 'delete_gift') {
     requireAdmin();
-    $id   = (int)($_GET['id'] ?? 0);
+    // Nhận id từ query string hoặc body
+    $body = getBody();
+    $id   = (int)($_GET['id'] ?? $body['id'] ?? 0);
+    if (!$id) jsonOut(['success' => false, 'message' => 'Missing id'], 400);
     $db   = getDB();
     $stmt = $db->prepare("DELETE FROM gifts WHERE id=?");
     $stmt->bind_param('i', $id);
     $stmt->execute();
-    jsonOut(['success' => true]);
+    jsonOut(['success' => true, 'affected' => $db->affected_rows]);
 }
 
 // ── RESET GIFT QUANTITIES ─────────────────────────────────────────
