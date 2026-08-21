@@ -317,6 +317,7 @@ function startHintTimer(round) {
 // ── RENDER GRID ───────────────────────────────────────────────────
 function renderGrid(size) {
     const container = document.getElementById('word-grid');
+    // Dùng fr để ô tự co vừa màn hình, không scroll ngang
     container.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
     container.innerHTML = '';
 
